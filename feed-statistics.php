@@ -4,69 +4,71 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
-Version: 1.3.2
+Version: 1.4
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 */
 
-if (isset($_GET["view"])){
-	require("./../../wp-config.php");
+if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
+	if (isset($_GET["view"])){
+		require("./../../wp-config.php");
 	
-	if (!empty($_GET["post_id"]) && get_option("feed_statistics_track_postviews")){
-		global $table_prefix;
-		global $wpdb;
+		if (!empty($_GET["post_id"]) && get_option("feed_statistics_track_postviews")){
+			global $table_prefix;
+			global $wpdb;
 
-		$sql = "INSERT INTO ".$table_prefix."feed_postviews
-			SET 
-				post_id=".intval($_GET["post_id"]).",
-				time=NOW()";
-		$wpdb->query($sql);
-	}
-	
-	header("Content-Type: image/gif");
-	echo base64_decode("R0lGODlhAQABAIAAANvf7wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
-	return;
-}
-
-if (isset($_GET["url"])){
-	require("./../../wp-config.php");
-	
-	$url = base64_decode($_GET["url"]);
-
-	if (get_option("feed_statistics_track_clickthroughs")){
-		if (trim($url) == '') die;
-
-		global $table_prefix;
-		global $wpdb;
-		$link_id = 0;
-		
-		$wpdb->hide_errors();
-		$sql = "SELECT id FROM ".$table_prefix."feed_links WHERE url='".mysql_real_escape_string($url)."'";
-		$result = $wpdb->query($sql);
-		
-		if ($result) {
-			$link_id = $wpdb->last_result[0]->id;
-		}
-		else {
-			$sql = "INSERT INTO ".$table_prefix."feed_links SET	url='".mysql_real_escape_string($url)."'";
-		
-			if ($wpdb->query($sql)) {
-				$link_id = $wpdb->insert_id;
-			}
-		}
-		
-		if ($link_id) {
-			$sql = "INSERT INTO ".$table_prefix."feed_clickthroughs SET
-				link_id=$link_id,
-				time=NOW()";
+			$sql = "INSERT INTO ".$table_prefix."feed_postviews
+				SET 
+					post_id=".intval($_GET["post_id"]).",
+					time=NOW()";
 			$wpdb->query($sql);
 		}
+	
+		header("Content-Type: image/gif");
+		echo base64_decode("R0lGODlhAQABAIAAANvf7wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
+		return;
 	}
+
+	if (isset($_GET["url"])){
+		require("./../../wp-config.php");
 	
-	$wpdb->show_errors();
+		$url = base64_decode($_GET["url"]);
+
+		if (get_option("feed_statistics_track_clickthroughs")){
+			if (trim($url) == '') die;
+
+			global $table_prefix;
+			global $wpdb;
+			$link_id = 0;
+		
+			$wpdb->hide_errors();
+			$sql = "SELECT id FROM ".$table_prefix."feed_links WHERE url='".mysql_real_escape_string($url)."'";
+			$result = $wpdb->query($sql);
+		
+			if ($result) {
+				$link_id = $wpdb->last_result[0]->id;
+			}
+			else {
+				$sql = "INSERT INTO ".$table_prefix."feed_links SET	url='".mysql_real_escape_string($url)."'";
+		
+				if ($wpdb->query($sql)) {
+					$link_id = $wpdb->insert_id;
+				}
+			}
+		
+			if ($link_id) {
+				$sql = "INSERT INTO ".$table_prefix."feed_clickthroughs SET
+					link_id=$link_id,
+					time=NOW()";
+				$wpdb->query($sql);
+			}
+		}
 	
-	header("Location: ".$url);
-	return;
+		$wpdb->show_errors();
+	
+		header("Location: ".$url);
+		return;
+	}
 }
 
 class FEED_STATS {
@@ -740,6 +742,7 @@ if(function_exists('add_action')){
 	add_action('admin_menu', array('FEED_STATS','add_options_menu'));
 	add_action('admin_head', array('FEED_STATS','admin_head'));
 }
+
 if(function_exists('get_option')){
 	if (get_option("feed_statistics_track_clickthroughs")) {
 		add_filter('the_content', array('FEED_STATS','clickthrough_replace'));
