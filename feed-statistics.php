@@ -4,19 +4,48 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
-Version: 1.4
+Version: 1.4.1
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 */
 
 if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
-	if (isset($_GET["view"])){
-		require("./../../wp-config.php");
+	if (!defined('DB_NAME')) {
+		$root = __FILE__;
+		$i = 1;
+		
+		while ($root = dirname($root)) {
+			if (file_exists($root . "/wp-load.php")) {
+				require_once($root . "/wp-load.php");
+				break;
+			}
+			else if (file_exists($root . "/wp-config.php")) {
+				require_once($root . "/wp-config.php");
+				break;
+			}
+			
+			if ($root == '/') {
+				if (isset($_GET["url"])){
+					$url = base64_decode($_GET["url"]);
+					header("Location: ".$url);
+					return;	
+				}
+				else if (isset($_GET["view"])) {
+					header("Content-Type: image/gif");
+					echo base64_decode("R0lGODlhAQABAIAAANvf7wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
+					return;
+				}
+				
+				die;
+			}
+		}
+	}
 	
+	if (isset($_GET["view"])){
 		if (!empty($_GET["post_id"]) && get_option("feed_statistics_track_postviews")){
 			global $table_prefix;
 			global $wpdb;
-
+			
 			$sql = "INSERT INTO ".$table_prefix."feed_postviews
 				SET 
 					post_id=".intval($_GET["post_id"]).",
@@ -28,12 +57,10 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 		echo base64_decode("R0lGODlhAQABAIAAANvf7wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
 		return;
 	}
-
-	if (isset($_GET["url"])){
-		require("./../../wp-config.php");
 	
+	if (isset($_GET["url"])){
 		$url = base64_decode($_GET["url"]);
-
+		
 		if (get_option("feed_statistics_track_clickthroughs")){
 			if (trim($url) == '') die;
 
@@ -676,7 +703,9 @@ class FEED_STATS {
 	
 	function clickthrough_replace($content) {
 		if (is_feed()) {
-			$redirect_url = get_bloginfo('wpurl') . "/wp-content/plugins/feed-statistics.php?url=";
+			$this_file = __FILE__;
+			
+			$redirect_url = feed_statistics_get_plugin_url() ."?url=";
 		
 			$content = preg_replace("/(<a[^>]+href=)(['\"])([^'\"]+)(['\"])([^>]*>)/e", "'$1\"$redirect_url'.base64_encode('\\3').'\"$5'", $content);
 		}	
@@ -688,7 +717,7 @@ class FEED_STATS {
 		global $id;
 		
 		if (is_feed()) {
-			$content .= ' <img src="'.get_bloginfo('wpurl' ) . '/wp-content/plugins/feed-statistics.php?view=1&post_id='.$id.'" width="1" height="1" style="display: none;" />';
+			$content .= ' <img src="'.feed_statistics_get_plugin_url().'?view=1&post_id='.$id.'" width="1" height="1" style="display: none;" />';
 		}
 		
 		return $content;
@@ -704,6 +733,16 @@ class FEED_STATS {
 		</style>		
 		<?php
 	}
+}
+
+function feed_statistics_get_plugin_url() {
+	if (!defined('WP_CONTENT_URL')) {
+		define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content');
+	}
+	
+	$plugin_url = WP_CONTENT_URL . '/plugins/' . plugin_basename(dirname(__FILE__));
+	
+	return $plugin_url;
 }
 
 function feed_subscribers(){
