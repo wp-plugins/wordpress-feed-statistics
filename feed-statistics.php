@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
-Version: 1.4.1
+Version: 1.4.2
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 */
@@ -170,7 +170,7 @@ class FEED_STATS {
 				$sql = "ALTER TABLE ".$table_prefix."feed_subscribers CHANGE feed feed VARCHAR(120) NOT NULL";
 				$wpdb->query($sql);
 				
-				update_option("feed_statistics_version","1.3.2");
+				update_option("feed_statistics_version","1.4.2");
 			case '1.3.2':
 				
 				break;
@@ -210,7 +210,7 @@ class FEED_STATS {
 				$wpdb->query($sql);
 				
 				update_option("feed_statistics_expiration_days","3");
-				update_option("feed_statistics_version","1.3.2");
+				update_option("feed_statistics_version","1.4.2");
 				update_option("feed_statistics_track_clickthroughs", "0");
 				update_option("feed_statistics_track_postviews", "1");
 				break;
