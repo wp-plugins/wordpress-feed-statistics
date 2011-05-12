@@ -4,7 +4,7 @@ Donate link: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Tags: rss, statistics, feeds, newsfeed, stats
 Requires at least: 2.5
 Tested up to: 3.1.2
-Stable tag: 1.4.3
+Stable tag: 1.5
 
 Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
 
