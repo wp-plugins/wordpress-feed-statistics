@@ -7,6 +7,7 @@ Description: Compiles statistics about who is reading your blog via an RSS feed 
 Version: 2.0pre
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
+License: GPL2
 */
 
 define( 'FEED_STATISTICS_VERSION', '2.0pre' );
@@ -179,6 +180,8 @@ class FEED_STATS {
 			header( 'Location: ' . $url );
 			die();
 		}
+		
+		load_plugin_textdomain( 'feed-statistics', false, dirname( __FILE__ ) . '/languages' );
 		
 		if (FEED_STATS::is_feed_url()){
 			$user_agent = $_SERVER["HTTP_USER_AGENT"];
@@ -386,72 +389,77 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	}
 	
 	function add_options_menu() {
-		add_menu_page('Feed Options', 'Feed', 8, basename(__FILE__), 'feed_statistics_feed_page');
-		add_submenu_page(basename(__FILE__), 'Top Feeds', 'Top Feeds', 8, 'feedstats-topfeeds', 'feed_statistics_topfeeds_page');
-		add_submenu_page(basename(__FILE__), 'Feed Readers', 'Feed Readers', 8, 'feedstats-feedreaders', 'feed_statistics_feedreaders_page');
+		add_menu_page( __( 'Feed Options', 'feed-statistics' ), __( 'Feed', 'feed-statistics' ), 8, basename(__FILE__), 'feed_statistics_feed_page' );
+		add_submenu_page( basename( __FILE__ ), __( 'Top Feeds', 'feed-statistics' ), __( 'Top Feeds', 'feed-statistics' ), 8, 'feedstats-topfeeds', 'feed_statistics_topfeeds_page' );
+		add_submenu_page( basename( __FILE__ ), __( 'Feed Readers', 'feed-statistics' ), __( 'Feed Readers', 'feed-statistics' ), 8, 'feedstats-feedreaders', 'feed_statistics_feedreaders_page' );
 		
 		if (get_option("feed_statistics_track_postviews"))
-			add_submenu_page(basename(__FILE__), 'Post Views', 'Post Views', 8, 'feedstats-postviews', 'feed_statistics_postviews_page');
+			add_submenu_page( basename( __FILE__ ), __( 'Post Views', 'feed-statistics' ), __( 'Post Views', 'feed-statistics' ), 8, 'feedstats-postviews', 'feed_statistics_postviews_page' );
 		
 		if (get_option("feed_statistics_track_clickthroughs"))
-			add_submenu_page(basename(__FILE__), 'Clickthroughs', 'Clickthroughs', 8, 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page');
+			add_submenu_page( basename( __FILE__ ), __( 'Clickthroughs', 'feed-statistics' ), __( 'Clickthroughs', 'feed-statistics' ), 8, 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page' );
 	}
 	
 	function clickthroughs_page(){
 		global $wpdb;
 		?>
 			<div class="wrap">
-				<p>You currently have clickthrough tracking turned <b>
-				<?php
-			
-				echo (get_option("feed_statistics_track_clickthroughs")) ? "on" : "off";
-			
-				?></b>.
+				<p>
+					<?php
+
+					if ( get_option( 'feed_statistics_track_clickthroughs' ) )
+						esc_html_e( 'You currently have clickthrough tracking turned on.', 'feed-statistics' );
+					else
+						esc_html_e( 'You currently have clickthrough tracking turned off.', 'feed-statistics' );
+	
+					?>
+				</p>
 			</p>
 			<br />
 
-			<h2>Most popular links in your feed (last 30 days)</h2>
+			<h2><?php esc_html_e( 'Most popular links in your feed (last 30 days)', 'feed-statistics' ); ?></h2>
 			<table style="width: 100%;">
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th style="width: 45%;">Outgoing Link</th>
-						<th>Clicks</th>
+						<th style="width: 45%;"><?php esc_html_e( 'Outgoing Link', 'feed-statistics' ); ?></th>
+						<th><?php esc_html_e( 'Clicks', 'feed-statistics' ); ?></th>
 						<th style="width: 35%;">&nbsp;</th>
-						</tr></thead>
+					</tr>
+				</thead>
 				<tbody>
-		<?php		
+					<?php
 		
-		$sql = "DELETE FROM `".$wpdb->prefix."feed_clickthroughs` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
-		$wpdb->get_results($sql);
+					$sql = "DELETE FROM `".$wpdb->prefix."feed_clickthroughs` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
+					$wpdb->get_results($sql);
 		
-		$sql = "SELECT 
-				COUNT(*) AS `clicks`,
-				`l`.`url` AS `link`
-			FROM `".$wpdb->prefix."feed_clickthroughs` AS `c`
-			LEFT JOIN `".$wpdb->prefix."feed_links` AS `l` ON `c`.`link_id`=`l`.`id`
-			WHERE `c`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
-			GROUP BY `c`.`link_id`
-			ORDER BY `clicks` DESC";
-		$results = $wpdb->get_results($sql);
+					$sql = "SELECT 
+							COUNT(*) AS `clicks`,
+							`l`.`url` AS `link`
+						FROM `".$wpdb->prefix."feed_clickthroughs` AS `c`
+						LEFT JOIN `".$wpdb->prefix."feed_links` AS `l` ON `c`.`link_id`=`l`.`id`
+						WHERE `c`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
+						GROUP BY `c`.`link_id`
+						ORDER BY `clicks` DESC";
+					$results = $wpdb->get_results($sql);
 		
-		$i = 1;
+					$i = 1;
 		
-		if (!empty($results)) {
-			$max = $results[0]->clicks;
+					if (!empty($results)) {
+						$max = $results[0]->clicks;
 		
-			foreach ($results as $row){
-				$percentage = ceil($row->clicks / $max * 100);
+						foreach ($results as $row){
+							$percentage = ceil($row->clicks / $max * 100);
 			
-				echo '<tr><td>'.$i++.'.</td><td><a href="'.$row->link.'">'.$row->link.'</a></td><td>'.$row->clicks.'</td>
-					<td>
-						<div class="graph" style="width: '.$percentage.'%;">&nbsp;</div>
-					</td>
-					</tr>';
-			}
-		}
+							echo '<tr><td>'.$i++.'.</td><td><a href="'.$row->link.'">'.$row->link.'</a></td><td>'.$row->clicks.'</td>
+								<td>
+									<div class="graph" style="width: '.$percentage.'%;">&nbsp;</div>
+								</td>
+								</tr>';
+						}
+					}
 					
-		?>			
+					?>
 				</tbody>
 			</table>
 		</div>
@@ -462,115 +470,122 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 		global $wpdb;
 		?>
 		<div class="wrap">
-			<h2>Your most popular feeds</h2>
+			<h2><?php esc_html_e( 'Your most popular feeds', 'feed-statistics' ); ?></h2>
 			<table style="width: 100%;">
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th style="width: 50%;">Feed URL</th>
-						<th>Subscribers</th>
+						<th style="width: 50%;"><?php esc_html_e( 'Feed URL', 'feed-statistics' ); ?></th>
+						<th><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
 						<th style="width: 35%;">&nbsp;</th>
 					</tr>
 				</thead>
 				<tbody>
-		<?php		
+					<?php
 		
-		$q = "SELECT
-			`feed`,
-			SUM(`subscribers`) `subscribers`
-			FROM `".$wpdb->prefix."feed_subscribers`
-			WHERE 
-				`feed` != '' 
-				AND 
-				(
-					(`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."') 
-					OR 
-					(
-						LOCATE('###',`identifier`) != 0 AND 
-						`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'
-					)
-				)
-			GROUP BY `feed`
-			ORDER BY `subscribers` DESC";
-		$results = $wpdb->get_results($q);
+					$q = "SELECT
+						`feed`,
+						SUM(`subscribers`) `subscribers`
+						FROM `".$wpdb->prefix."feed_subscribers`
+						WHERE 
+							`feed` != '' 
+							AND 
+							(
+								(`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."') 
+								OR 
+								(
+									LOCATE('###',`identifier`) != 0 AND 
+									`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'
+								)
+							)
+						GROUP BY `feed`
+						ORDER BY `subscribers` DESC";
+					$results = $wpdb->get_results($q);
 		
-		$feeds = array();
+					$feeds = array();
 		
-		$i = 1;
+					$i = 1;
 		
-		if (!empty($results)){
-			foreach ($results as $feed) {
-				if (!isset($max)) $max = $feed->subscribers;
+					if (!empty($results)){
+						foreach ($results as $feed) {
+							if (!isset($max)) $max = $feed->subscribers;
 				
-				$percentage = ceil($feed->subscribers / $max * 100);
+							$percentage = ceil($feed->subscribers / $max * 100);
 			
-				echo '<tr><td>'.$i++.'.</td><td style="width: 40%;"><a href="'.$feed->feed.'">'.$feed->feed.'</a></td><td style="width: 15%;">'.$feed->subscribers.'</td><td style="width: 40%;"><div class="graph" style="width: '.$percentage.'%;">&nbsp;</div></td></tr>';
-			}
-		}
-		
-		echo "</tbody></table>";
+							echo '<tr><td>'.$i++.'.</td><td style="width: 40%;"><a href="'.$feed->feed.'">'.$feed->feed.'</a></td><td style="width: 15%;">'.$feed->subscribers.'</td><td style="width: 40%;"><div class="graph" style="width: '.$percentage.'%;">&nbsp;</div></td></tr>';
+						}
+					}
+					
+					?>
+				</tbody>
+			</table>
+		</div>
+		<?php
 	}
 	
 	function postviews_page(){
 		global $wpdb;
 		?>
 		<div class="wrap">
-			<p>You currently have post view tracking turned <b>
-			<?php
-			
-			echo (get_option("feed_statistics_track_postviews")) ? "on" : "off";
-			
-			?></b>.</p>
-			<br />
-			<h2>Your most popular posts (last 30 days)</h2>
+			<p>
+				<?php
+				
+				if ( get_option( 'feed_statistics_track_postviews' ) )
+					esc_html_e( 'You currently have post view tracking turned on.', 'feed-statistics' );
+				else
+					esc_html_e( 'You currently have post view tracking turned off.', 'feed-statistics' );
+				
+				?>
+			</p>
+			<h2><?php esc_html_e( 'Your most popular posts (last 30 days)', 'feed-statistics' ); ?></h2>
 			<table style="width: 100%;">
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th style="width: 50%;">Post Title</th>
-						<th>Views</th>
+						<th style="width: 50%;"><?php esc_html_e( 'Post Title', 'feed-statistics' ); ?></th>
+						<th><?php esc_html_e( 'Views', 'feed-statistics' ); ?></th>
 						<th style="width: 35%;">&nbsp;</th>
 					</tr>
 				</thead>
 				<tbody>
-		<?php		
+					<?php		
 		
-		// Delete entries older than 30 days.
-		$sql = "DELETE FROM `".$wpdb->prefix."feed_postviews` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
-		$wpdb->get_results($sql);
+					// Delete entries older than 30 days.
+					$sql = "DELETE FROM `".$wpdb->prefix."feed_postviews` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
+					$wpdb->get_results($sql);
 		
-		$sql = "SELECT 
-				COUNT(*) AS `views`,
-				`v`.`post_id`,
-				`p`.`post_title` `title`,
-				`p`.`guid` `permalink`
-			FROM `".$wpdb->prefix."feed_postviews` AS `v`
-			LEFT JOIN `".$wpdb->prefix."posts` AS `p` ON `v`.`post_id`=`p`.`ID`
-			WHERE `v`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
-			GROUP BY `v`.`post_id`
-			ORDER BY `views` DESC
-			LIMIT 20";
-		$results = $wpdb->get_results($sql);
+					$sql = "SELECT 
+							COUNT(*) AS `views`,
+							`v`.`post_id`,
+							`p`.`post_title` `title`,
+							`p`.`guid` `permalink`
+						FROM `".$wpdb->prefix."feed_postviews` AS `v`
+						LEFT JOIN `".$wpdb->prefix."posts` AS `p` ON `v`.`post_id`=`p`.`ID`
+						WHERE `v`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
+						GROUP BY `v`.`post_id`
+						ORDER BY `views` DESC
+						LIMIT 20";
+					$results = $wpdb->get_results($sql);
 		
-		if (!empty($results)) {
-			$i = 1;
-			$max = $results[0]->views;
+					if (!empty($results)) {
+						$i = 1;
+						$max = $results[0]->views;
 			
-			foreach ($results as $row) {
-				$percentage = ceil($row->views / $max * 100);
-				echo '
-					<tr>
-						<td>'.$i++.'.</td>
-						<td><a href="'.$row->permalink.'">'.$row->title.'</a></td>
-						<td>'.$row->views.'</td>
-						<td>
-							<div class="graph" style="width: '.$percentage.'%;">&nbsp;</div>
-						</td>
-					</tr>';
-			}
-		}
+						foreach ($results as $row) {
+							$percentage = ceil($row->views / $max * 100);
+							echo '
+								<tr>
+									<td>'.$i++.'.</td>
+									<td><a href="'.$row->permalink.'">'.$row->title.'</a></td>
+									<td>'.$row->views.'</td>
+									<td>
+										<div class="graph" style="width: '.$percentage.'%;">&nbsp;</div>
+									</td>
+								</tr>';
+						}
+					}
 					
-		?>			
+					?>
 				</tbody>
 			</table>
 		</div>
@@ -580,7 +595,7 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	function feedreaders_page(){
 		?>
 		<div class="wrap">
-		<h2>Top Feed Readers</h2>
+		<h2><?php esc_html_e( 'Top Feed Readers', 'feed-statistics' ); ?></h2>
 		<?php 
 		
 		echo FEED_STATS::reader_stats();
@@ -598,22 +613,22 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 		} 
 		?>
 		<div class="wrap">
-			<h2>Feed Options</h2>
+			<h2><?php esc_html_e( 'Feed Options', 'feed-statistics' ); ?></h2>
 			<form method="post" style="width: 100%;">
 				<fieldset>
 					<input type="hidden" name="feed_statistics_update" value="1"/>
-					<p>Count users who have requested a feed within the last <input type="text" size="2" name="feed_statistics_expiration_days" value="<?php echo get_option("feed_statistics_expiration_days"); ?>" /> days as subscribers. You currently have <b><?php feed_subscribers(); ?></b>. </p>
+					<p><?php printf( esc_html( __( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.' ) ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?></p>
 					<p>
 						<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php if (get_option("feed_statistics_track_clickthroughs")) { ?>checked="checked"<?php } ?>>
-						Track which links your subscribers click<br />
-						This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn't notice a difference.
+						<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?><br />
+						<?php esc_html_e( 'This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
 					</p>
 					<p>
 						<input type="checkbox" name="feed_statistics_track_postviews" value="1" <?php if (get_option("feed_statistics_track_postviews")) { ?>checked="checked"<?php } ?>>
-						Track individual post views<br />
-						This is done via an invisible tracking image and will track views of posts by users that use feed readers that load images from your site.
+						<?php esc_html_e( 'Track individual post views', 'feed-statistics' ); ?><br />
+						<?php esc_html_e( 'This is done via an invisible tracking image and will track views of posts by users that use feed readers that load images from your site.', 'feed-statistics' ); ?>
 					</p>
-					<input type="submit" name="Submit" value="<?php _e('Update Options') ?> &raquo;" />
+					<input type="submit" name="Submit" value="<?php esc_attr_e( 'Update Options', 'feed-statistics' ); ?> &raquo;" />
 				</fieldset>	
 			</form>
 		</div>
@@ -773,8 +788,8 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 
 function feed_subscribers(){
 	$s = FEED_STATS::how_many_subscribers();
-	echo $s." feed subscriber";
-	if ($s != 1) echo "s";
+	
+	printf( _n( '%d feed subscriber', '%d feed subscribers', $s ), $s );
 }
 
 function feed_statistics_options() {
