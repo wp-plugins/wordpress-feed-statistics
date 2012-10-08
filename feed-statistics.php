@@ -766,13 +766,7 @@ class FEED_STATS {
 }
 
 function feed_statistics_get_plugin_url() {
-	if (!defined('WP_CONTENT_URL')) {
-		define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content');
-	}
-	
-	$plugin_url = WP_CONTENT_URL . '/plugins/wordpress-feed-statistics/feed-statistics.php';
-	
-	return $plugin_url;
+	return plugins_url( 'feed-statistics.php', __FILE__ );
 }
 
 function feed_subscribers(){
