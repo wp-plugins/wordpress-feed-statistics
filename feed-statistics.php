@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
-Version: 1.6pre
+Version: 2.0pre
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 */
@@ -105,126 +105,8 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 }
 
 class FEED_STATS {
-	function init(){
+	static function init(){
 		global $wpdb;
-		
-		$version = get_option("feed_statistics_version");
-		
-		if (isset($_GET["reset_feed_statistics"])) $version = '';
-		
-		switch ($version) {
-			case '1.0':
-			case '1.0.1':
-			case '1.0.2':
-			case '1.0.3':
-			case '1.0.4':
-				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` ADD `user_agent` VARCHAR(255) NOT NULL DEFAULT ''";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_clickthroughs` (
-					`id` INT(11) NOT NULL auto_increment,
-					`link_id` INT(11) NOT NULL DEFAULT '0',
-					`referrer_id` INT(11) NOT NULL DEFAULT '0',
-					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-					PRIMARY KEY (id)
-				)";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_links` (
-					`id` INT(11) NOT NULL auto_increment,
-					`url` VARCHAR(255) NOT NULL DEFAULT '',
-					PRIMARY KEY (`id`),
-					UNIQUE KEY `url` (`url`)
-				)";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_referrers` (
-					`id` INT(11) NOT NULL auto_increment,
-					`url` VARCHAR(255) NOT NULL DEFAULT '',
-					PRIMARY KEY (`id`),
-					UNIQUE KEY `url` (`url`)
-				)";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_postviews` (
-					`id` INT(11) NOT NULL auto_increment,
-					`post_id` INT(11) NOT NULL DEFAULT '0',
-					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-					PRIMARY KEY (id)
-				)";
-				$wpdb->query($sql);
-				
-				update_option("feed_statistics_track_clickthroughs", "0");
-				update_option("feed_statistics_track_postviews", "1");
-			case '1.1':
-			case '1.1.1':
-			case '1.1.2':
-				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` ADD `feed` VARCHAR( 120 ) NOT NULL AFTER `identifier`";
-				$wpdb->query($sql);
-
-				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` DROP PRIMARY KEY, ADD PRIMARY KEY (`identifier`, `feed`)";
-				$wpdb->query($sql);
-			case '1.2':
-			case '1.3':
-				$sql = "DROP TABLE `".$wpdb->prefix."feed_referrers`";
-				$wpdb->query($sql);
-				
-				$sql = "ALTER TABLE `".$wpdb->prefix."feed_clickthroughs` DROP `referrer_id`";
-				$wpdb->query($sql);
-			case '1.3.1':
-				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` CHANGE `feed` `feed` VARCHAR(120) NOT NULL";
-				$wpdb->query($sql);
-			case '1.3.2':
-			case '1.4':
-			case '1.4.1';
-			case '1.4.2':
-			case '1.4.3':
-				update_option("feed_statistics_version","1.5");
-			break;
-			case "1.5":
-			break;
-			default:
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_subscribers` (
-					`subscribers` INT(11) NOT NULL DEFAULT 0,
-					`identifier` VARCHAR(200) NOT NULL DEFAULT '',
-					`feed` VARCHAR( 120 ) NOT NULL,
-					`date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-					`user_agent` VARCHAR(255) NOT NULL DEFAULT '',
-					PRIMARY KEY (`identifier`, `feed`)
-				)";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_clickthroughs` (
-					`id` INT(11) NOT NULL auto_increment,
-					`link_id` INT(11) NOT NULL DEFAULT '0',
-					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-					PRIMARY KEY (`id`)
-				)";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_links` (
-					`id` INT(11) NOT NULL auto_increment,
-					`url` VARCHAR(255) NOT NULL DEFAULT '',
-					PRIMARY KEY (`id`),
-					UNIQUE KEY `url` (`url`)
-				)";
-				$wpdb->query($sql);
-				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_postviews` (
-					`id` INT(11) NOT NULL auto_increment,
-					`post_id` INT(11) NOT NULL DEFAULT '0',
-					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-					PRIMARY KEY (id)
-				)";
-				$wpdb->query($sql);
-				
-				update_option("feed_statistics_expiration_days","3");
-				update_option("feed_statistics_version","1.5");
-				update_option("feed_statistics_track_clickthroughs", "0");
-				update_option("feed_statistics_track_postviews", "1");
-				
-				break;
-		}
 		
 		if ( isset( $_GET['feed-stats-post-id'] ) ) {
 			if ( ! empty( $_GET['feed-stats-view'] ) && get_option( "feed_statistics_track_postviews" ) ) {
@@ -386,6 +268,57 @@ class FEED_STATS {
 				}
 			}
 		}
+	}
+	
+	static function db_setup() {
+		$installed_version = get_option( 'feed_statistics_version' );
+		
+		if ( '2.0pre' != $installed_version ) {
+			FEED_STATS::sql();
+			
+			update_option( 'feed_statistics_version', '2.0pre' );
+			
+			add_option( 'feed_statistics_track_clickthroughs', '0' );
+			add_option( 'feed_statistics_track_postviews',     '1' );
+			add_option( 'feed_statistics_expiration_days',     '3' );
+		}
+	}
+	
+	static function sql() {
+		global $wpdb;
+		
+		$sql = "CREATE TABLE ".$wpdb->prefix."feed_clickthroughs (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  link_id int(11) NOT NULL DEFAULT '0',
+  time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY  (id)
+);
+
+CREATE TABLE ".$wpdb->prefix."feed_links (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  url varchar(1000) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY  url (url)
+);
+
+CREATE TABLE ".$wpdb->prefix."feed_postviews (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  post_id int(11) NOT NULL DEFAULT '0',
+  time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY  (id)
+);
+
+CREATE TABLE ".$wpdb->prefix."feed_subscribers (
+  subscribers int(11) NOT NULL DEFAULT '0',
+  identifier varchar(255) NOT NULL DEFAULT '',
+  feed varchar(120) NOT NULL,
+  date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  user_agent varchar(255) DEFAULT NULL,
+  PRIMARY KEY  (identifier,feed)
+);";
+
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		dbDelta( $sql );
 	}
 	
 	function is_feed_url() {
@@ -875,6 +808,8 @@ if(function_exists('add_action')){
 	add_action('init', array('FEED_STATS','widget_register'));
 	add_action('admin_menu', array('FEED_STATS','add_options_menu'));
 	add_action('admin_head', array('FEED_STATS','admin_head'));
+	
+	add_action( 'plugins_loaded', array( 'FEED_STATS', 'db_setup' ) );
 }
 
 if(function_exists('get_option')){
@@ -885,6 +820,10 @@ if(function_exists('get_option')){
 	if (get_option("feed_statistics_track_postviews")) {
 		add_filter('the_content', array('FEED_STATS','postview_tracker'));
 	}
+}
+
+if ( function_exists( 'register_activation_hook' ) ) {
+	register_activation_hook( __FILE__, array( 'FEED_STATS', 'sql' ) );
 }
 
 ?>
