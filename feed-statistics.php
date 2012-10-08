@@ -51,10 +51,9 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 	
 	if (isset($_GET["view"])){
 		if (!empty($_GET["post_id"]) && get_option("feed_statistics_track_postviews")){
-			global $table_prefix;
 			global $wpdb;
 			
-			$sql = "INSERT INTO `".$table_prefix."feed_postviews`
+			$sql = "INSERT INTO `".$wpdb->prefix."feed_postviews`
 				SET 
 					`post_id`=".intval($_GET["post_id"]).",
 					`time`=NOW()";
@@ -72,19 +71,18 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 		if (get_option("feed_statistics_track_clickthroughs")){
 			if (trim($url) == '') die;
 
-			global $table_prefix;
 			global $wpdb;
 			$link_id = 0;
 		
 			$wpdb->hide_errors();
-			$sql = "SELECT `id` FROM `".$table_prefix."feed_links` WHERE `url`='".mysql_real_escape_string($url)."'";
+			$sql = "SELECT `id` FROM `".$wpdb->prefix."feed_links` WHERE `url`='".mysql_real_escape_string($url)."'";
 			$result = $wpdb->query($sql);
 		
 			if ($result) {
 				$link_id = $wpdb->last_result[0]->id;
 			}
 			else {
-				$sql = "INSERT INTO `".$table_prefix."feed_links` SET `url`='".mysql_real_escape_string($url)."'";
+				$sql = "INSERT INTO `".$wpdb->prefix."feed_links` SET `url`='".mysql_real_escape_string($url)."'";
 		
 				if ($wpdb->query($sql)) {
 					$link_id = $wpdb->insert_id;
@@ -92,7 +90,7 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 			}
 		
 			if ($link_id) {
-				$sql = "INSERT INTO `".$table_prefix."feed_clickthroughs` SET
+				$sql = "INSERT INTO `".$wpdb->prefix."feed_clickthroughs` SET
 					`link_id`=".intval($link_id).",
 					`time`=NOW()";
 				$wpdb->query($sql);
@@ -108,7 +106,6 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 
 class FEED_STATS {
 	function init(){
-		global $table_prefix;
 		global $wpdb;
 		
 		$version = get_option("feed_statistics_version");
@@ -121,10 +118,10 @@ class FEED_STATS {
 			case '1.0.2':
 			case '1.0.3':
 			case '1.0.4':
-				$sql = "ALTER TABLE `".$table_prefix."feed_subscribers` ADD `user_agent` VARCHAR(255) NOT NULL DEFAULT ''";
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` ADD `user_agent` VARCHAR(255) NOT NULL DEFAULT ''";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_clickthroughs` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_clickthroughs` (
 					`id` INT(11) NOT NULL auto_increment,
 					`link_id` INT(11) NOT NULL DEFAULT '0',
 					`referrer_id` INT(11) NOT NULL DEFAULT '0',
@@ -133,7 +130,7 @@ class FEED_STATS {
 				)";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_links` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_links` (
 					`id` INT(11) NOT NULL auto_increment,
 					`url` VARCHAR(255) NOT NULL DEFAULT '',
 					PRIMARY KEY (`id`),
@@ -141,7 +138,7 @@ class FEED_STATS {
 				)";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_referrers` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_referrers` (
 					`id` INT(11) NOT NULL auto_increment,
 					`url` VARCHAR(255) NOT NULL DEFAULT '',
 					PRIMARY KEY (`id`),
@@ -149,7 +146,7 @@ class FEED_STATS {
 				)";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_postviews` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_postviews` (
 					`id` INT(11) NOT NULL auto_increment,
 					`post_id` INT(11) NOT NULL DEFAULT '0',
 					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -162,20 +159,20 @@ class FEED_STATS {
 			case '1.1':
 			case '1.1.1':
 			case '1.1.2':
-				$sql = "ALTER TABLE `".$table_prefix."feed_subscribers` ADD `feed` VARCHAR( 120 ) NOT NULL AFTER `identifier`";
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` ADD `feed` VARCHAR( 120 ) NOT NULL AFTER `identifier`";
 				$wpdb->query($sql);
 
-				$sql = "ALTER TABLE `".$table_prefix."feed_subscribers` DROP PRIMARY KEY, ADD PRIMARY KEY (`identifier`, `feed`)";
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` DROP PRIMARY KEY, ADD PRIMARY KEY (`identifier`, `feed`)";
 				$wpdb->query($sql);
 			case '1.2':
 			case '1.3':
-				$sql = "DROP TABLE `".$table_prefix."feed_referrers`";
+				$sql = "DROP TABLE `".$wpdb->prefix."feed_referrers`";
 				$wpdb->query($sql);
 				
-				$sql = "ALTER TABLE `".$table_prefix."feed_clickthroughs` DROP `referrer_id`";
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_clickthroughs` DROP `referrer_id`";
 				$wpdb->query($sql);
 			case '1.3.1':
-				$sql = "ALTER TABLE `".$table_prefix."feed_subscribers` CHANGE `feed` `feed` VARCHAR(120) NOT NULL";
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` CHANGE `feed` `feed` VARCHAR(120) NOT NULL";
 				$wpdb->query($sql);
 			case '1.3.2':
 			case '1.4':
@@ -187,7 +184,7 @@ class FEED_STATS {
 			case "1.5":
 			break;
 			default:
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_subscribers` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_subscribers` (
 					`subscribers` INT(11) NOT NULL DEFAULT 0,
 					`identifier` VARCHAR(200) NOT NULL DEFAULT '',
 					`feed` VARCHAR( 120 ) NOT NULL,
@@ -197,7 +194,7 @@ class FEED_STATS {
 				)";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_clickthroughs` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_clickthroughs` (
 					`id` INT(11) NOT NULL auto_increment,
 					`link_id` INT(11) NOT NULL DEFAULT '0',
 					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -205,7 +202,7 @@ class FEED_STATS {
 				)";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_links` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_links` (
 					`id` INT(11) NOT NULL auto_increment,
 					`url` VARCHAR(255) NOT NULL DEFAULT '',
 					PRIMARY KEY (`id`),
@@ -213,7 +210,7 @@ class FEED_STATS {
 				)";
 				$wpdb->query($sql);
 				
-				$sql = "CREATE TABLE IF NOT EXISTS `".$table_prefix."feed_postviews` (
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_postviews` (
 					`id` INT(11) NOT NULL auto_increment,
 					`post_id` INT(11) NOT NULL DEFAULT '0',
 					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -232,7 +229,7 @@ class FEED_STATS {
 		if ( isset( $_GET['feed-stats-post-id'] ) ) {
 			if ( ! empty( $_GET['feed-stats-view'] ) && get_option( "feed_statistics_track_postviews" ) ) {
 				$wpdb->insert(
-					$table_prefix . 'feed_postviews',
+					$wpdb->prefix . 'feed_postviews',
 					array(
 						'post_id' => $_GET['feed-stats-view'],
 						'time' => date( 'Y-m-d H:i:s' )
@@ -261,7 +258,7 @@ class FEED_STATS {
 				
 				$link_id = $wpdb->get_var(
 					$wpdb->prepare(
-						"SELECT id FROM " . $table_prefix . "feed_links WHERE url=%d",
+						"SELECT id FROM " . $wpdb->prefix . "feed_links WHERE url=%d",
 						$url
 					)
 				);
@@ -269,7 +266,7 @@ class FEED_STATS {
 				if ( ! $link_id ) {
 					if (
 						$wpdb->insert(
-							$table_prefix . 'feed_links',
+							$wpdb->prefix . 'feed_links',
 							array( 'url' => $url ),
 							array( '%s' )
 						)
@@ -280,7 +277,7 @@ class FEED_STATS {
 
 				if ( $link_id ) {
 					$wpdb->insert(
-						$table_prefix . 'feed_clickthroughs',
+						$wpdb->prefix . 'feed_clickthroughs',
 						array(
 							'link_id' => $link_id,
 							'time' => date( 'Y-m-d H:i:s' )
@@ -342,13 +339,13 @@ class FEED_STATS {
 				$feed .= "/";
 			}
 			
-			$q = "SELECT * FROM `".$table_prefix."feed_subscribers`
+			$q = "SELECT * FROM `".$wpdb->prefix."feed_subscribers`
 				WHERE `identifier`='".mysql_real_escape_string($identifier)."'
 				AND `feed`=''";
 			$results = $wpdb->get_results($q);
 		
 			if (!empty($results)) {
-				$q = "UPDATE `".$table_prefix."feed_subscribers`
+				$q = "UPDATE `".$wpdb->prefix."feed_subscribers`
 					SET 
 						`subscribers`=".intval($subscribers).", 
 						`identifier`='".mysql_real_escape_string($identifier)."', 
@@ -361,11 +358,11 @@ class FEED_STATS {
 				$wpdb->query($q);
 			}
 			else {
-				$q = "SELECT * FROM `".$table_prefix."feed_subscribers` WHERE `identifier`='".mysql_real_escape_string($identifier)."' AND `feed`='".mysql_real_escape_string($feed)."'";
+				$q = "SELECT * FROM `".$wpdb->prefix."feed_subscribers` WHERE `identifier`='".mysql_real_escape_string($identifier)."' AND `feed`='".mysql_real_escape_string($feed)."'";
 				$result = $wpdb->query($q);
 				
 				if ($result == 0) {
-					$q = "INSERT INTO `".$table_prefix."feed_subscribers`
+					$q = "INSERT INTO `".$wpdb->prefix."feed_subscribers`
 						SET 
 							`subscribers`=".intval($subscribers).", 
 							`identifier`='".mysql_real_escape_string($identifier)."', 
@@ -378,7 +375,7 @@ class FEED_STATS {
 					$row = $wpdb->last_result[0];
 					
 					if ($user_agent != $row->user_agent || $subscribers != $row->subscribers){
-						$q = "UPDATE `".$table_prefix."feed_subscribers`
+						$q = "UPDATE `".$wpdb->prefix."feed_subscribers`
 							SET
 							`date`=NOW(), 
 							`user_agent`='".mysql_real_escape_string($user_agent)."',
@@ -420,13 +417,12 @@ class FEED_STATS {
 	}
 	
 	function how_many_subscribers() {
-		global $table_prefix;
 		global $wpdb;
 		
 		$q = "SELECT
 				`subscribers`,
 				CASE WHEN `subscribers` = 1 THEN `identifier` ELSE CONCAT(`identifier`, `feed`) END AS `ident`
-			FROM `".$table_prefix."feed_subscribers`
+			FROM `".$wpdb->prefix."feed_subscribers`
 			WHERE 
 				(
 					(`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."') 
@@ -467,7 +463,6 @@ class FEED_STATS {
 	}
 	
 	function clickthroughs_page(){
-		global $table_prefix;
 		global $wpdb;
 		?>
 			<div class="wrap">
@@ -492,14 +487,14 @@ class FEED_STATS {
 				<tbody>
 		<?php		
 		
-		$sql = "DELETE FROM `".$table_prefix."feed_clickthroughs` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
+		$sql = "DELETE FROM `".$wpdb->prefix."feed_clickthroughs` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
 		$wpdb->get_results($sql);
 		
 		$sql = "SELECT 
 				COUNT(*) AS `clicks`,
 				`l`.`url` AS `link`
-			FROM `".$table_prefix."feed_clickthroughs` AS `c`
-			LEFT JOIN `".$table_prefix."feed_links` AS `l` ON `c`.`link_id`=`l`.`id`
+			FROM `".$wpdb->prefix."feed_clickthroughs` AS `c`
+			LEFT JOIN `".$wpdb->prefix."feed_links` AS `l` ON `c`.`link_id`=`l`.`id`
 			WHERE `c`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
 			GROUP BY `c`.`link_id`
 			ORDER BY `clicks` DESC";
@@ -529,7 +524,6 @@ class FEED_STATS {
 	}
 	
 	function topfeeds_page(){
-		global $table_prefix;
 		global $wpdb;
 		?>
 		<div class="wrap">
@@ -549,7 +543,7 @@ class FEED_STATS {
 		$q = "SELECT
 			`feed`,
 			SUM(`subscribers`) `subscribers`
-			FROM `".$table_prefix."feed_subscribers`
+			FROM `".$wpdb->prefix."feed_subscribers`
 			WHERE 
 				`feed` != '' 
 				AND 
@@ -583,7 +577,6 @@ class FEED_STATS {
 	}
 	
 	function postviews_page(){
-		global $table_prefix;
 		global $wpdb;
 		?>
 		<div class="wrap">
@@ -608,7 +601,7 @@ class FEED_STATS {
 		<?php		
 		
 		// Delete entries older than 30 days.
-		$sql = "DELETE FROM `".$table_prefix."feed_postviews` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
+		$sql = "DELETE FROM `".$wpdb->prefix."feed_postviews` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
 		$wpdb->get_results($sql);
 		
 		$sql = "SELECT 
@@ -616,8 +609,8 @@ class FEED_STATS {
 				`v`.`post_id`,
 				`p`.`post_title` `title`,
 				`p`.`guid` `permalink`
-			FROM `".$table_prefix."feed_postviews` AS `v`
-			LEFT JOIN `".$table_prefix."posts` AS `p` ON `v`.`post_id`=`p`.`ID`
+			FROM `".$wpdb->prefix."feed_postviews` AS `v`
+			LEFT JOIN `".$wpdb->prefix."posts` AS `p` ON `v`.`post_id`=`p`.`ID`
 			WHERE `v`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
 			GROUP BY `v`.`post_id`
 			ORDER BY `views` DESC
@@ -693,11 +686,11 @@ class FEED_STATS {
 	}
 	
 	function reader_stats() {
-		global $wpdb, $table_prefix;
+		global $wpdb;
 		
 		$expiration_days = get_option("feed_statistics_expiration_days");
 		
-		$sql = "DELETE FROM `".$table_prefix."feed_subscribers` WHERE `date` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'";
+		$sql = "DELETE FROM `".$wpdb->prefix."feed_subscribers` WHERE `date` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'";
 		$wpdb->get_results($sql);
 		
 		$q = "SELECT
@@ -708,7 +701,7 @@ class FEED_STATS {
 						`user_agent`
 				END AS `reader`,
 			SUM(`subscribers`) `readers`
-			FROM `".$table_prefix."feed_subscribers`
+			FROM `".$wpdb->prefix."feed_subscribers`
 			WHERE `date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."'
 			GROUP BY `reader`
 			ORDER BY `readers` DESC";
