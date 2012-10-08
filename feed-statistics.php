@@ -9,6 +9,8 @@ Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 */
 
+define( 'FEED_STATISTICS_VERSION', '2.0pre' );
+
 if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 	/**
 	 * Deprecated. Versions before 2.0 sent requests directly to this file, which
@@ -273,10 +275,10 @@ class FEED_STATS {
 	static function db_setup() {
 		$installed_version = get_option( 'feed_statistics_version' );
 		
-		if ( '2.0pre' != $installed_version ) {
+		if ( FEED_STATISTICS_VERSION != $installed_version ) {
 			FEED_STATS::sql();
 			
-			update_option( 'feed_statistics_version', '2.0pre' );
+			update_option( 'feed_statistics_version', FEED_STATISTICS_VERSION );
 			
 			add_option( 'feed_statistics_track_clickthroughs', '0' );
 			add_option( 'feed_statistics_track_postviews',     '1' );
