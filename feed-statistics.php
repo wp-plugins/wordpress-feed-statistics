@@ -771,10 +771,6 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	}
 }
 
-function feed_statistics_get_plugin_url() {
-	return plugins_url( 'feed-statistics.php', __FILE__ );
-}
-
 function feed_subscribers(){
 	$s = FEED_STATS::how_many_subscribers();
 	echo $s." feed subscriber";
