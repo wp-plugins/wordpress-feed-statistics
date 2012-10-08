@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
-Version: 1.5
+Version: 1.6pre
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 */
@@ -380,8 +380,12 @@ class FEED_STATS {
 		add_menu_page('Feed Options', 'Feed', 8, basename(__FILE__), 'feed_statistics_feed_page');
 		add_submenu_page(basename(__FILE__), 'Top Feeds', 'Top Feeds', 8, 'feedstats-topfeeds', 'feed_statistics_topfeeds_page');
 		add_submenu_page(basename(__FILE__), 'Feed Readers', 'Feed Readers', 8, 'feedstats-feedreaders', 'feed_statistics_feedreaders_page');
-		add_submenu_page(basename(__FILE__), 'Post Views', 'Post Views', 8, 'feedstats-postviews', 'feed_statistics_postviews_page');
-		add_submenu_page(basename(__FILE__), 'Clickthroughs', 'Clickthroughs', 8, 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page');
+		
+		if (get_option("feed_statistics_track_postviews"))
+			add_submenu_page(basename(__FILE__), 'Post Views', 'Post Views', 8, 'feedstats-postviews', 'feed_statistics_postviews_page');
+		
+		if (get_option("feed_statistics_track_clickthroughs"))
+			add_submenu_page(basename(__FILE__), 'Clickthroughs', 'Clickthroughs', 8, 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page');
 	}
 	
 	function clickthroughs_page(){
