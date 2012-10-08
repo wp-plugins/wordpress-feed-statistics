@@ -10,6 +10,14 @@ Author URI: http://www.chrisfinke.com/
 */
 
 if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
+	/**
+	 * Deprecated. Versions before 2.0 sent requests directly to this file, which
+	 * required hacky ways of loading some of the WordPress core stuff. Version 2
+	 * does everything in an init action to catch these views and redirects.
+	 * This code will be removed in the next version; it's left in only to catch
+	 * views and redirects from stored feeds.
+	 */
+	
 	if (!defined('DB_NAME')) {
 		$root = __FILE__;
 		$i = 1;
@@ -219,6 +227,76 @@ class FEED_STATS {
 				update_option("feed_statistics_track_postviews", "1");
 				
 				break;
+		}
+		
+		if ( isset( $_GET['feed-stats-post-id'] ) ) {
+			if ( ! empty( $_GET['feed-stats-view'] ) && get_option( "feed_statistics_track_postviews" ) ) {
+				$wpdb->insert(
+					$table_prefix . 'feed_postviews',
+					array(
+						'post_id' => $_GET['feed-stats-view'],
+						'time' => date( 'Y-m-d H:i:s' )
+					),
+					array(
+						'%d',
+						'%s'
+					)
+				);
+			}
+
+			header("Content-Type: image/gif");
+			echo base64_decode("R0lGODlhAQABAIAAANvf7wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
+			die();
+		}
+
+		if ( isset( $_GET['feed-stats-url'] ) ) {
+			$url = trim( base64_decode( $_GET['feed-stats-url'] ) );
+			
+			if ( ! $url ) die;
+			
+			if ( get_option( 'feed_statistics_track_clickthroughs' ) ) {
+				$link_id = 0;
+
+				$wpdb->hide_errors();
+				
+				$link_id = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM " . $table_prefix . "feed_links WHERE url=%d",
+						$url
+					)
+				);
+				
+				if ( ! $link_id ) {
+					if (
+						$wpdb->insert(
+							$table_prefix . 'feed_links',
+							array( 'url' => $url ),
+							array( '%s' )
+						)
+					) {
+						$link_id = $wpdb->insert_id;
+					}
+				}
+
+				if ( $link_id ) {
+					$wpdb->insert(
+						$table_prefix . 'feed_clickthroughs',
+						array(
+							'link_id' => $link_id,
+							'time' => date( 'Y-m-d H:i:s' )
+						),
+						array(
+							'%d',
+							'%s'
+						)
+					);
+				}
+			}
+
+			$wpdb->show_errors();
+
+			header( 'Location: ' . $url );
+			die();
 		}
 		
 		if (FEED_STATS::is_feed_url()){
@@ -735,9 +813,9 @@ class FEED_STATS {
 		if (is_feed()) {
 			$this_file = __FILE__;
 			
-			$redirect_url = feed_statistics_get_plugin_url() ."?url=";
+			$redirect_url = home_url( '/?feed-stats-url=' );
 		
-			$content = preg_replace("/(<a[^>]+href=)(['\"])([^'\"]+)(['\"])([^>]*>)/e", "'$1\"$redirect_url'.base64_encode('\\3').'\"$5'", $content);
+			$content = preg_replace("/(<a[^>]+href=)(['\"])([^'\"]+)(['\"])([^>]*>)/e", "'$1\"'.esc_url('$redirect_url' . base64_encode('\\3') ) . '\"$5'", $content);
 		}	
 		
 		return $content;
@@ -747,7 +825,7 @@ class FEED_STATS {
 		global $id;
 		
 		if (is_feed()) {
-			$content .= ' <img src="'.feed_statistics_get_plugin_url().'?view=1&post_id='.$id.'" width="1" height="1" style="display: none;" />';
+			$content .= ' <img src="' . esc_url( home_url( '/?feed-stats-post-id=' . $id ) ) . '" width="1" height="1" style="display: none;" />';
 		}
 		
 		return $content;
