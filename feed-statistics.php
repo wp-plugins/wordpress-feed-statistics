@@ -3,7 +3,7 @@
 /*
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
-Description: Compiles statistics about who is reading your blog via an RSS feed and what they're reading.
+Description: Compiles statistics about who is reading your blog via a feed reader and what posts they're reading.
 Version: 2.0pre
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
@@ -555,7 +555,7 @@ class FEED_STATS {
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th style="width: 45%;"><?php esc_html_e( 'Outgoing Link', 'feed-statistics' ); ?></th>
+						<th style="width: 45%; text-align: left;"><?php esc_html_e( 'Outgoing Link', 'feed-statistics' ); ?></th>
 						<th><?php esc_html_e( 'Clicks', 'feed-statistics' ); ?></th>
 						<th style="width: 35%;">&nbsp;</th>
 					</tr>
@@ -631,8 +631,8 @@ class FEED_STATS {
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th style="width: 50%;"><?php esc_html_e( 'Feed URL', 'feed-statistics' ); ?></th>
-						<th><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
+						<th style="width: 50%; text-align: left;"><?php esc_html_e( 'Feed URL', 'feed-statistics' ); ?></th>
+						<th style="text-align: left;"><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
 						<th style="width: 35%;">&nbsp;</th>
 					</tr>
 				</thead>
@@ -719,8 +719,8 @@ class FEED_STATS {
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th style="width: 50%;"><?php esc_html_e( 'Post Title', 'feed-statistics' ); ?></th>
-						<th><?php esc_html_e( 'Views', 'feed-statistics' ); ?></th>
+						<th style="width: 50%; text-align: left;"><?php esc_html_e( 'Post Title', 'feed-statistics' ); ?></th>
+						<th style="text-align: left;"><?php esc_html_e( 'Views', 'feed-statistics' ); ?></th>
 						<th style="width: 35%;">&nbsp;</th>
 					</tr>
 				</thead>
@@ -888,8 +888,8 @@ class FEED_STATS {
 				<thead>
 					<tr>
 						<th>&nbsp;</th>
-						<th><?php esc_html_e( 'Reader', 'feed-statistics' ); ?></th>
-						<th><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
+						<th style="text-align: left;"><?php esc_html_e( 'Reader', 'feed-statistics' ); ?></th>
+						<th style="text-align: left;"><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
 						<th>&nbsp;</th>
 					</tr>
 				</thead>
@@ -939,16 +939,15 @@ class FEED_STATS {
 						<tr valign="top">
 							<th scope="row"><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
 							<td>
-								<?php printf( esc_html( __( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.' ) ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?>
+								<?php printf( esc_html__( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.' ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?>
 							</td>
 						</tr>
 						<tr valign="top">
 							<th scope="row"><?php esc_html_e( 'Clickthroughs', 'feed-statistics' ); ?></th>
 							<td>
-								<p>
-									<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php checked( get_option( 'feed_statistics_track_clickthroughs' ) ); ?> />
-									<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?>
-									<br />
+								<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php checked( get_option( 'feed_statistics_track_clickthroughs' ) ); ?> />
+								<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?>
+								<p class="description">
 									<?php esc_html_e( 'This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
 								</p>
 							</td>
@@ -956,10 +955,9 @@ class FEED_STATS {
 						<tr valign="top">
 							<th scope="row"><?php esc_html_e( 'Post views', 'feed-statistics' ); ?></th>
 							<td>
-								<p>
-									<input type="checkbox" name="feed_statistics_track_postviews" value="1" <?php checked( get_option( 'feed_statistics_track_postviews' ) ); ?> />
-									<?php esc_html_e( 'Track individual post views', 'feed-statistics' ); ?>
-									<br />
+								<input type="checkbox" name="feed_statistics_track_postviews" value="1" <?php checked( get_option( 'feed_statistics_track_postviews' ) ); ?> />
+								<?php esc_html_e( 'Track individual post views', 'feed-statistics' ); ?>
+								<p class="description">
 									<?php esc_html_e( 'This is done via an invisible tracking image and will track views of posts by users that use feed readers that load images from your site.', 'feed-statistics' ); ?>
 								</p>
 							</td>
@@ -1052,6 +1050,14 @@ function feed_statistics_topfeeds_page() {
 	FEED_STATS::topfeeds_page();
 }
 
+function feed_statistics_action_links( $links, $file ) {
+    if ( $file == plugin_basename( dirname(__FILE__) . '/feed-statistics.php' ) ) {
+        $links[] = '<a href="admin.php?page=feed-statistics.php">' . esc_html__( 'Settings', 'feed-statistics' ) .' </a>';
+    }
+
+    return $links;
+}
+
 if(function_exists('add_action')){
 	add_action('init', array('FEED_STATS','init'));
 	add_action('init', array('FEED_STATS','widget_register'));
@@ -1059,6 +1065,10 @@ if(function_exists('add_action')){
 	add_action('admin_head', array('FEED_STATS','admin_head'));
 	
 	add_action( 'plugins_loaded', array( 'FEED_STATS', 'db_setup' ) );
+}
+
+if ( function_exists( 'add_filter' ) ) {
+	add_filter( 'plugin_action_links', 'feed_statistics_action_links', 10, 2 );
 }
 
 if(function_exists('get_option')){
