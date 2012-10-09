@@ -992,10 +992,18 @@ class FEED_STATS {
 			
 			$redirect_url = home_url( '/?feed-stats-url=' );
 		
-			$content = preg_replace("/(<a[^>]+href=)(['\"])([^'\"]+)(['\"])([^>]*>)/e", "'$1\"'.esc_url('$redirect_url' . base64_encode('\\3') ) . '\"$5'", $content);
+			$content = preg_replace("/(<a[^>]+href=)(['\"])([^\#][^'\"]+)(['\"])([^>]*>)/e", "'$1\"' . FEED_STATS::generate_clickthrough_url( '\\3' ) . '\"$5'", $content);
 		}	
 		
 		return $content;
+	}
+	
+	static function generate_clickthrough_url( $url ) {
+		if ( strpos( $url, "//" ) === false ) {
+			return $url;
+		}
+		
+		return esc_url( home_url( '/?feed-stats-url=' . base64_encode( $url ) ) );
 	}
 	
 	function postview_tracker($content) {
