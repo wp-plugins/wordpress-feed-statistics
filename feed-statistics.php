@@ -85,7 +85,7 @@ if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 				$link_id = $wpdb->last_result[0]->id;
 			}
 			else {
-				$sql = "INSERT INTO `".$wpdb->prefix."feed_links` SET `url`='".mysql_real_escape_string($url)."'";
+				$sql = "INSERT INTO `".$wpdb->prefix."feed_links` SET `url`='".mysql_real_escape_string($url)."', `url_hash`='".md5( $url ) ."'";
 		
 				if ($wpdb->query($sql)) {
 					$link_id = $wpdb->insert_id;
@@ -112,11 +112,11 @@ class FEED_STATS {
 		global $wpdb;
 		
 		if ( isset( $_GET['feed-stats-post-id'] ) ) {
-			if ( ! empty( $_GET['feed-stats-view'] ) && get_option( "feed_statistics_track_postviews" ) ) {
+			if ( ! empty( $_GET['feed-stats-post-id'] ) && get_option( "feed_statistics_track_postviews" ) ) {
 				$wpdb->insert(
 					$wpdb->prefix . 'feed_postviews',
 					array(
-						'post_id' => $_GET['feed-stats-view'],
+						'post_id' => $_GET['feed-stats-post-id'],
 						'time' => date( 'Y-m-d H:i:s' )
 					),
 					array(
@@ -152,8 +152,11 @@ class FEED_STATS {
 					if (
 						$wpdb->insert(
 							$wpdb->prefix . 'feed_links',
-							array( 'url' => $url ),
-							array( '%s' )
+							array(
+								'url' => $url,
+								'url_hash' => md5( $url )
+							),
+							array( '%s', '%s' )
 						)
 					) {
 						$link_id = $wpdb->insert_id;
@@ -180,6 +183,13 @@ class FEED_STATS {
 			header( 'Location: ' . $url );
 			die();
 		}
+		
+		if ( isset( $_POST["feed_statistics_update"] ) ) {
+			// Handle settings changes here so that the menus can show the right options.
+			update_option( "feed_statistics_expiration_days", intval( $_POST["feed_statistics_expiration_days"] ) );
+			update_option( "feed_statistics_track_clickthroughs", intval( isset( $_POST["feed_statistics_track_clickthroughs"] ) ) );
+			update_option( "feed_statistics_track_postviews", intval( isset( $_POST["feed_statistics_track_postviews"] ) ) );
+		} 
 		
 		load_plugin_textdomain( 'feed-statistics', false, dirname( __FILE__ ) . '/languages' );
 		
@@ -226,50 +236,77 @@ class FEED_STATS {
 				$feed .= "/";
 			}
 			
-			$q = "SELECT * FROM `".$wpdb->prefix."feed_subscribers`
-				WHERE `identifier`='".mysql_real_escape_string($identifier)."'
-				AND `feed`=''";
-			$results = $wpdb->get_results($q);
+			$results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM ".$wpdb->prefix."feed_subscribers WHERE identifier=%s AND feed=''", $identifier ) );
 		
-			if (!empty($results)) {
-				$q = "UPDATE `".$wpdb->prefix."feed_subscribers`
-					SET 
-						`subscribers`=".intval($subscribers).", 
-						`identifier`='".mysql_real_escape_string($identifier)."', 
-						`user_agent`='".mysql_real_escape_string($user_agent)."',
-						`feed`='".mysql_real_escape_string($feed)."',
-						`date`=NOW() 
-					WHERE
-						`identifier`='".mysql_real_escape_string($identifier)."'
-						AND `feed`=''";
-				$wpdb->query($q);
+			if ( ! empty( $results ) ) {
+				$wpdb->update(
+					$wpdb->prefix . 'feed_subscribers',
+					array(
+						'subscribers' => $susbcribers,
+						'user_agent' => $user_agent,
+						'feed' => $feed,
+						'date' => date( 'Y-m-d H:i:s' )
+					),
+					array(
+						'identifier' => $identifier,
+						'feed' => ''
+					),
+					array(
+						'%d',
+						'%s',
+						'%s',
+						'%s'
+					),
+					array(
+						'%s',
+						'%s'
+					)
+				);
 			}
 			else {
-				$q = "SELECT * FROM `".$wpdb->prefix."feed_subscribers` WHERE `identifier`='".mysql_real_escape_string($identifier)."' AND `feed`='".mysql_real_escape_string($feed)."'";
-				$result = $wpdb->query($q);
+				$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . $wpdb->prefix . "feed_subscribers WHERE identifier=%s AND feed=%s", $identifier, $feed ) );
 				
-				if ($result == 0) {
-					$q = "INSERT INTO `".$wpdb->prefix."feed_subscribers`
-						SET 
-							`subscribers`=".intval($subscribers).", 
-							`identifier`='".mysql_real_escape_string($identifier)."', 
-							`user_agent`='".mysql_real_escape_string($user_agent)."',
-							`feed`='".mysql_real_escape_string($feed)."',
-							`date`=NOW()";
-					$wpdb->query($q);
+				if ( empty( $row ) ) {
+					$wpdb->insert(
+						$wpdb->prefix . 'feed_subscribers',
+						array(
+							'subscribers' => $subscribers,
+							'identifier' => $identifier,
+							'user_agent' => $user_agent,
+							'feed' => $feed,
+							'date' => date( 'Y-m-d H:i:s' )
+						),
+						array(
+							'%d',
+							'%s',
+							'%s',
+							'%s',
+							'%s'
+						)
+					);
 				}
-				else {
-					$row = $wpdb->last_result[0];
-					
-					if ($user_agent != $row->user_agent || $subscribers != $row->subscribers){
-						$q = "UPDATE `".$wpdb->prefix."feed_subscribers`
-							SET
-							`date`=NOW(), 
-							`user_agent`='".mysql_real_escape_string($user_agent)."',
-							`subscribers`=".intval($subscribers)."
-							WHERE `identifier`='".mysql_real_escape_string($identifier)."' AND `feed`='".mysql_real_escape_string($feed)."'";
-						$wpdb->query($q);
-					}
+				else if ( $user_agent != $row->user_agent || $subscribers != $row->subscribers ) {
+					$wpdb->update(
+						$wpdb->prefix . 'feed_subscribers',
+						array(
+							'date' => date( 'Y-m-d H:i:s' ),
+							'user_agent' => $user_agent,
+							'subscribers' => $subscribers
+						),
+						array(
+							'identifier' => $identifier,
+							'feed' => $feed
+						),
+						array(
+							'%s',
+							'%s',
+							'%d'
+						),
+						array(
+							'%s',
+							'%s'
+						)
+					);
 				}
 			}
 		}
@@ -292,38 +329,125 @@ class FEED_STATS {
 	static function sql() {
 		global $wpdb;
 		
-		$sql = "CREATE TABLE ".$wpdb->prefix."feed_clickthroughs (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  link_id int(11) NOT NULL DEFAULT '0',
-  time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  PRIMARY KEY  (id)
-);
+		$last_version = get_option( 'feed_statistics_version' );
+		
+		switch ( $last_version ) {
+			case '1.0':
+			case '1.0.1':
+			case '1.0.2':
+			case '1.0.3':
+			case '1.0.4':
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` ADD `user_agent` VARCHAR(255) NOT NULL DEFAULT ''";
+				$wpdb->query($sql);
+				
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_clickthroughs` (
+					`id` INT(11) NOT NULL auto_increment,
+					`link_id` INT(11) NOT NULL DEFAULT '0',
+					`referrer_id` INT(11) NOT NULL DEFAULT '0',
+					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+					PRIMARY KEY (id)
+				)";
+				$wpdb->query($sql);
+				
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_links` (
+					`id` INT(11) NOT NULL auto_increment,
+					`url` VARCHAR(255) NOT NULL DEFAULT '',
+					PRIMARY KEY (`id`),
+					UNIQUE KEY `url` (`url`)
+				)";
+				$wpdb->query($sql);
+				
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_referrers` (
+					`id` INT(11) NOT NULL auto_increment,
+					`url` VARCHAR(255) NOT NULL DEFAULT '',
+					PRIMARY KEY (`id`),
+					UNIQUE KEY `url` (`url`)
+				)";
+				$wpdb->query($sql);
+				
+				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_postviews` (
+					`id` INT(11) NOT NULL auto_increment,
+					`post_id` INT(11) NOT NULL DEFAULT '0',
+					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+					PRIMARY KEY (id)
+				)";
+				$wpdb->query($sql);
+				
+				update_option("feed_statistics_track_clickthroughs", "0");
+				update_option("feed_statistics_track_postviews", "1");
+			case '1.1':
+			case '1.1.1':
+			case '1.1.2':
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` ADD `feed` VARCHAR( 120 ) NOT NULL AFTER `identifier`";
+				$wpdb->query($sql);
 
-CREATE TABLE ".$wpdb->prefix."feed_links (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  url varchar(1000) NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY  url (url)
-);
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` DROP PRIMARY KEY, ADD PRIMARY KEY (`identifier`, `feed`)";
+				$wpdb->query($sql);
+			case '1.2':
+			case '1.3':
+				$sql = "DROP TABLE `".$wpdb->prefix."feed_referrers`";
+				$wpdb->query($sql);
+				
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_clickthroughs` DROP `referrer_id`";
+				$wpdb->query($sql);
+			case '1.3.1':
+				$sql = "ALTER TABLE `".$wpdb->prefix."feed_subscribers` CHANGE `feed` `feed` VARCHAR(120) NOT NULL";
+				$wpdb->query($sql);
+			case '1.3.2':
+			case '1.4':
+			case '1.4.1';
+			case '1.4.2':
+			case '1.4.3':
+			case '1.5':
+				// Seeing some errors about a 1000-byte key being too long. Go figure.
+				$wpdb->query( "ALTER TABLE " . $wpdb->prefix . "feed_links DROP KEY url" );
+				$wpdb->query( "ALTER TABLE " . $wpdb->prefix . "feed_links ADD url_hash VARCHAR(32) NOT NULL" );
+				$wpdb->query( "UPDATE " . $wpdb->prefix . "feed_links SET url_hash=MD5(url)" );
+				$wpdb->query( "ALTER TABLE " . $wpdb->prefix . "feed_links ADD KEY url_hash (url_hash)" );
+			break;
+			default:
+				// Full SQL of current schema.
+				
+				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_links
+					(
+						id int(11) NOT NULL AUTO_INCREMENT,
+						url_hash varchar(32) NOT NULL,
+						url varchar(1000) NOT NULL,
+						PRIMARY KEY  (id),
+						UNIQUE KEY url_hash (url_hash)
+					)"
+				);
 
-CREATE TABLE ".$wpdb->prefix."feed_postviews (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  post_id int(11) NOT NULL DEFAULT '0',
-  time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  PRIMARY KEY  (id)
-);
+				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_postviews
+					(
+						id int(11) NOT NULL AUTO_INCREMENT,
+						post_id int(11) NOT NULL DEFAULT '0',
+						time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+						PRIMARY KEY  (id)
+					)"
+				);
 
-CREATE TABLE ".$wpdb->prefix."feed_subscribers (
-  subscribers int(11) NOT NULL DEFAULT '0',
-  identifier varchar(255) NOT NULL DEFAULT '',
-  feed varchar(120) NOT NULL,
-  date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  user_agent varchar(255) DEFAULT NULL,
-  PRIMARY KEY  (identifier,feed)
-);";
-
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		dbDelta( $sql );
+				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_subscribers
+					(
+						subscribers int(11) NOT NULL DEFAULT '0',
+						identifier varchar(255) NOT NULL DEFAULT '',
+						feed varchar(120) NOT NULL,
+						date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+						user_agent varchar(255) DEFAULT NULL,
+						PRIMARY KEY  (identifier,feed)
+					)"
+				);
+				
+				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_clickthroughs
+					(
+						id int(11) NOT NULL AUTO_INCREMENT,
+						link_id int(11) NOT NULL DEFAULT '0',
+						time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+						PRIMARY KEY  (id)
+					)"
+				);
+			break;
+		}
 	}
 	
 	function is_feed_url() {
@@ -357,67 +481,76 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	function how_many_subscribers() {
 		global $wpdb;
 		
-		$q = "SELECT
-				`subscribers`,
-				CASE WHEN `subscribers` = 1 THEN `identifier` ELSE CONCAT(`identifier`, `feed`) END AS `ident`
-			FROM `".$wpdb->prefix."feed_subscribers`
-			WHERE 
-				(
-					(`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."') 
-					OR 
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT
+					`subscribers`,
+					CASE WHEN `subscribers` = 1 THEN `identifier` ELSE CONCAT(`identifier`, `feed`) END AS `ident`
+				FROM " . $wpdb->prefix . "feed_subscribers
+				WHERE 
 					(
-						LOCATE('###',`identifier`) != 0 AND 
-						`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'
+						(`date` > %s)
+						OR 
+						(
+							LOCATE('###',`identifier`) != 0 AND 
+							`date` > %s
+						)
 					)
-				)
-				ORDER BY `ident` ASC, `date` DESC";
-		$results = $wpdb->get_results($q);
+				ORDER BY `ident` ASC, `date` DESC",
+				date( "Y-m-d H:i:s", time() - ( 60 * 60 * 24 * get_option( "feed_statistics_expiration_days" ) ) ),
+				date( "Y-m-d H:i:s", time() - ( 60 * 60 * 24 * get_option( "feed_statistics_expiration_days" ) * 3 ) )
+			)
+		);
 		
 		$s = 0;
-		$current_ident = '';
 		
-		if (!empty($results)) {
-			foreach ($results as $row){
-				if ($row->ident != $current_ident){
+		if ( ! empty( $results ) ) {
+			$current_ident = '';
+
+			foreach ( $results as $row ) {
+				if ( $row->ident != $current_ident ) {
 					$s += $row->subscribers;
 					$current_ident = $row->ident;
 				}
 			}
 		}
 		
-		return intval($s);
+		return intval( $s );
 	}
 	
 	function add_options_menu() {
-		add_menu_page( __( 'Feed Options', 'feed-statistics' ), __( 'Feed', 'feed-statistics' ), 8, basename(__FILE__), 'feed_statistics_feed_page' );
-		add_submenu_page( basename( __FILE__ ), __( 'Top Feeds', 'feed-statistics' ), __( 'Top Feeds', 'feed-statistics' ), 8, 'feedstats-topfeeds', 'feed_statistics_topfeeds_page' );
-		add_submenu_page( basename( __FILE__ ), __( 'Feed Readers', 'feed-statistics' ), __( 'Feed Readers', 'feed-statistics' ), 8, 'feedstats-feedreaders', 'feed_statistics_feedreaders_page' );
+		add_menu_page( __( 'Feed Statistics Settings', 'feed-statistics' ), __( 'Feed Statistics', 'feed-statistics' ), 'publish_posts', basename(__FILE__), 'feed_statistics_feed_page' );
+		
+		add_submenu_page( basename( __FILE__ ), __( 'Top Feeds', 'feed-statistics' ), __( 'Top Feeds', 'feed-statistics' ), 'publish_posts', 'feedstats-topfeeds', 'feed_statistics_topfeeds_page' );
+		add_submenu_page( basename( __FILE__ ), __( 'Feed Readers', 'feed-statistics' ), __( 'Feed Readers', 'feed-statistics' ), 'publish_posts', 'feedstats-feedreaders', 'feed_statistics_feedreaders_page' );
 		
 		if (get_option("feed_statistics_track_postviews"))
-			add_submenu_page( basename( __FILE__ ), __( 'Post Views', 'feed-statistics' ), __( 'Post Views', 'feed-statistics' ), 8, 'feedstats-postviews', 'feed_statistics_postviews_page' );
+			add_submenu_page( basename( __FILE__ ), __( 'Post Views', 'feed-statistics' ), __( 'Post Views', 'feed-statistics' ), 'publish_posts', 'feedstats-postviews', 'feed_statistics_postviews_page' );
 		
 		if (get_option("feed_statistics_track_clickthroughs"))
-			add_submenu_page( basename( __FILE__ ), __( 'Clickthroughs', 'feed-statistics' ), __( 'Clickthroughs', 'feed-statistics' ), 8, 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page' );
+			add_submenu_page( basename( __FILE__ ), __( 'Clickthroughs', 'feed-statistics' ), __( 'Clickthroughs', 'feed-statistics' ), 'publish_posts', 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page' );
 	}
 	
 	function clickthroughs_page(){
 		global $wpdb;
+		
 		?>
-			<div class="wrap">
-				<p>
-					<?php
-
-					if ( get_option( 'feed_statistics_track_clickthroughs' ) )
-						esc_html_e( 'You currently have clickthrough tracking turned on.', 'feed-statistics' );
-					else
-						esc_html_e( 'You currently have clickthrough tracking turned off.', 'feed-statistics' );
-	
-					?>
-				</p>
-			</p>
-			<br />
-
+		<div class="wrap">
+			<div class="icon32" id="icon-options-general">
+				<br />
+			</div>
 			<h2><?php esc_html_e( 'Most popular links in your feed (last 30 days)', 'feed-statistics' ); ?></h2>
+			<p>
+				<?php
+
+				if ( get_option( 'feed_statistics_track_clickthroughs' ) )
+					esc_html_e( 'You currently have clickthrough tracking turned on.', 'feed-statistics' );
+				else
+					esc_html_e( 'You currently have clickthrough tracking turned off.', 'feed-statistics' );
+
+				?>
+			</p>
+
 			<table style="width: 100%;">
 				<thead>
 					<tr>
@@ -429,36 +562,55 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 				</thead>
 				<tbody>
 					<?php
-		
-					$sql = "DELETE FROM `".$wpdb->prefix."feed_clickthroughs` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
-					$wpdb->get_results($sql);
-		
-					$sql = "SELECT 
-							COUNT(*) AS `clicks`,
-							`l`.`url` AS `link`
-						FROM `".$wpdb->prefix."feed_clickthroughs` AS `c`
-						LEFT JOIN `".$wpdb->prefix."feed_links` AS `l` ON `c`.`link_id`=`l`.`id`
-						WHERE `c`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
-						GROUP BY `c`.`link_id`
-						ORDER BY `clicks` DESC";
-					$results = $wpdb->get_results($sql);
-		
+
+					$wpdb->query(
+						$wpdb->prepare(
+							"DELETE FROM " . $wpdb->prefix . "feed_clickthroughs WHERE time < %s",
+							date( "Y-m-d H:i:s", time() - ( 60 * 60 * 24 * 30 ) )
+						)
+					);
+
+					$results = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT 
+								COUNT(*) AS `clicks`,
+								`l`.`url` AS `link`
+							FROM " . $wpdb->prefix . "feed_clickthroughs AS `c`
+								LEFT JOIN `".$wpdb->prefix."feed_links` AS `l` ON `c`.`link_id`=`l`.`id`
+							WHERE `c`.`time` > %s
+							GROUP BY `c`.`link_id`
+							ORDER BY `clicks` DESC",
+							date( 'Y-m-d H:i:s', time() - ( 60 * 60 * 24 * 30 ) )
+						)
+					);
+	
 					$i = 1;
-		
-					if (!empty($results)) {
+	
+					if ( ! empty( $results ) ) {
 						$max = $results[0]->clicks;
-		
-						foreach ($results as $row){
-							$percentage = ceil($row->clicks / $max * 100);
-			
-							echo '<tr><td>'.$i++.'.</td><td><a href="'.$row->link.'">'.$row->link.'</a></td><td>'.$row->clicks.'</td>
+	
+						foreach ( $results as $row ) {
+							$percentage = ceil( $row->clicks / $max * 100 );
+							
+							?>
+							<tr>
 								<td>
-									<div class="graph" style="width: '.$percentage.'%;">&nbsp;</div>
+									<?php echo $i++; ?>
 								</td>
-								</tr>';
+								<td>
+									<a href="<?php echo esc_url( $row->link ); ?>"><?php echo esc_url( $row->link ); ?></a>
+								</td>
+								<td>
+									<?php echo $row->clicks; ?>
+								</td>
+								<td>
+									<div class="graph" style="width: <?php echo $percentage; ?>%;">&nbsp;</div>
+								</td>
+							</tr>
+							<?php
 						}
 					}
-					
+				
 					?>
 				</tbody>
 			</table>
@@ -468,8 +620,12 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	
 	function topfeeds_page(){
 		global $wpdb;
+		
 		?>
 		<div class="wrap">
+			<div class="icon32" id="icon-options-general">
+				<br />
+			</div>
 			<h2><?php esc_html_e( 'Your most popular feeds', 'feed-statistics' ); ?></h2>
 			<table style="width: 100%;">
 				<thead>
@@ -483,36 +639,53 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 				<tbody>
 					<?php
 		
-					$q = "SELECT
-						`feed`,
-						SUM(`subscribers`) `subscribers`
-						FROM `".$wpdb->prefix."feed_subscribers`
-						WHERE 
-							`feed` != '' 
-							AND 
-							(
-								(`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."') 
-								OR 
-								(
-									LOCATE('###',`identifier`) != 0 AND 
-									`date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'
-								)
-							)
-						GROUP BY `feed`
-						ORDER BY `subscribers` DESC";
-					$results = $wpdb->get_results($q);
-		
+					$results = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT
+								`feed`,
+								SUM(`subscribers`) `subscribers`
+								FROM `".$wpdb->prefix."feed_subscribers`
+								WHERE 
+									`feed` != '' 
+									AND 
+									(
+										(`date` > %s) 
+										OR 
+										(
+											LOCATE('###',`identifier`) != 0 AND 
+											`date` > %s
+										)
+									)
+								GROUP BY `feed`
+								ORDER BY `subscribers` DESC",
+							date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days"))),
+							date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))
+						)
+					);
+
 					$feeds = array();
-		
+
 					$i = 1;
-		
-					if (!empty($results)){
-						foreach ($results as $feed) {
-							if (!isset($max)) $max = $feed->subscribers;
-				
-							$percentage = ceil($feed->subscribers / $max * 100);
-			
-							echo '<tr><td>'.$i++.'.</td><td style="width: 40%;"><a href="'.$feed->feed.'">'.$feed->feed.'</a></td><td style="width: 15%;">'.$feed->subscribers.'</td><td style="width: 40%;"><div class="graph" style="width: '.$percentage.'%;">&nbsp;</div></td></tr>';
+
+					if ( ! empty( $results ) ) {
+						foreach ( $results as $feed ) {
+							if ( ! isset( $max ) )
+								$max = $feed->subscribers;
+
+							$percentage = ceil( $feed->subscribers / $max * 100 );
+
+							?>
+							<tr>
+								<td><?php echo $i++; ?></td>
+								<td style="width: 40%;">
+									<a href="<?php echo esc_url( $feed->feed ); ?>"><?php echo esc_url( $feed->feed ); ?></a>
+								</td>
+								<td style="width: 15%;"><?php echo $feed->subscribers; ?></td>
+								<td style="width: 40%;">
+									<div class="graph" style="width: <?php echo $percentage; ?>%;">&nbsp;</div>
+								</td>
+							</tr>
+							<?php
 						}
 					}
 					
@@ -525,8 +698,13 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	
 	function postviews_page(){
 		global $wpdb;
+		
 		?>
 		<div class="wrap">
+			<div class="icon32" id="icon-options-general">
+				<br />
+			</div>
+			<h2><?php esc_html_e( 'Your most popular posts (last 30 days)', 'feed-statistics' ); ?></h2>
 			<p>
 				<?php
 				
@@ -537,7 +715,6 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 				
 				?>
 			</p>
-			<h2><?php esc_html_e( 'Your most popular posts (last 30 days)', 'feed-statistics' ); ?></h2>
 			<table style="width: 100%;">
 				<thead>
 					<tr>
@@ -548,40 +725,50 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 					</tr>
 				</thead>
 				<tbody>
-					<?php		
+					<?php
 		
 					// Delete entries older than 30 days.
-					$sql = "DELETE FROM `".$wpdb->prefix."feed_postviews` WHERE `time` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'";
-					$wpdb->get_results($sql);
+					$wpdb->query(
+						$wpdb->prepare(
+							"DELETE FROM " . $wpdb->prefix . "feed_postviews WHERE `time` < %s",
+							date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))
+						)
+					);
 		
-					$sql = "SELECT 
-							COUNT(*) AS `views`,
-							`v`.`post_id`,
-							`p`.`post_title` `title`,
-							`p`.`guid` `permalink`
-						FROM `".$wpdb->prefix."feed_postviews` AS `v`
-						LEFT JOIN `".$wpdb->prefix."posts` AS `p` ON `v`.`post_id`=`p`.`ID`
-						WHERE `v`.`time` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))."'
-						GROUP BY `v`.`post_id`
-						ORDER BY `views` DESC
-						LIMIT 20";
-					$results = $wpdb->get_results($sql);
+					$results = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT 
+								COUNT(*) AS `views`,
+								`v`.`post_id`,
+								`p`.`post_title` `title`,
+								`p`.`guid` `permalink`
+							FROM " . $wpdb->prefix . "feed_postviews AS `v`
+							LEFT JOIN " . $wpdb->prefix . "posts AS `p` ON `v`.`post_id`=`p`.`ID`
+							WHERE `v`.`time` > %s
+							GROUP BY `v`.`post_id`
+							ORDER BY `views` DESC
+							LIMIT 20",
+							date("Y-m-d H:i:s", time() - (60 * 60 * 24 * 30))
+						)
+					);
 		
-					if (!empty($results)) {
+					if ( ! empty( $results ) ) {
 						$i = 1;
 						$max = $results[0]->views;
 			
-						foreach ($results as $row) {
+						foreach ( $results as $row ) {
 							$percentage = ceil($row->views / $max * 100);
-							echo '
-								<tr>
-									<td>'.$i++.'.</td>
-									<td><a href="'.$row->permalink.'">'.$row->title.'</a></td>
-									<td>'.$row->views.'</td>
-									<td>
-										<div class="graph" style="width: '.$percentage.'%;">&nbsp;</div>
-									</td>
-								</tr>';
+							
+							?>
+							<tr>
+								<td><?php echo $i++; ?></td>
+								<td><a href="<?php echo esc_url( $row->permalink ); ?>"><?php esc_html_e( $row->title ); ?></a></td>
+								<td><?php echo $row->views; ?></td>
+								<td>
+									<div class="graph" style="width: <?php echo $percentage; ?>%;">&nbsp;</div>
+								</td>
+							</tr>
+							<?php
 						}
 					}
 					
@@ -593,163 +780,212 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 	}
 	
 	function feedreaders_page(){
+		global $wpdb;
+		
 		?>
 		<div class="wrap">
-		<h2><?php esc_html_e( 'Top Feed Readers', 'feed-statistics' ); ?></h2>
-		<?php 
+			<div class="icon32" id="icon-options-general">
+				<br />
+			</div>
+			<h2><?php esc_html_e( 'Top Feed Readers', 'feed-statistics' ); ?></h2>
+			<?php 
 		
-		echo FEED_STATS::reader_stats();
+			$expiration_days = get_option("feed_statistics_expiration_days");
 		
-		?>
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM " . $wpdb->prefix . "feed_subscribers WHERE `date` < %s",
+					date( "Y-m-d H:i:s", time() - ( 60 * 60 * 24 * get_option( "feed_statistics_expiration_days" ) * 3 ) )
+				)
+			);
+		
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT
+						CASE 
+							WHEN 
+								LOCATE('###',`identifier`) != 0 THEN SUBSTRING(`identifier`, 1, LOCATE(' ',`identifier`))
+							ELSE
+								`user_agent`
+						END AS `reader`,
+					SUM(`subscribers`) `readers`
+					FROM " . $wpdb->prefix . "feed_subscribers
+					WHERE `date` > %s
+					GROUP BY `reader`
+					ORDER BY `readers` DESC",
+					date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))
+				)
+			);
+		
+			$readers = array();
+		
+			if (!empty($results)){
+				foreach ($results as $row){
+					$reader = $row->reader;
+			
+					$version = array();
+			
+					if ($reader == '') {
+						$reader = "Unknown (Pending)";
+					} 
+					else if (preg_match("/Navigator\/([0-9abpre\.]+)/is", $reader, $version)){
+						$reader = "Netscape Navigator ".$version[1];
+					}
+					else if (preg_match("/Opera\/([0-9abpre\.]+)/is", $reader, $version)){
+						$reader = "Opera ".$version[1];
+					}
+					else if (preg_match("/Flock\/([0-9abpre\.]+)/is", $reader, $version)){
+						$reader = "Flock ".$version[1];
+					}
+					else if (preg_match("/(Firefox|BonEcho|GranParadiso|Aurora|Minefield)\/([0-9abpre\.]+)/is", $reader, $version)) {
+						$reader = "Mozilla ".$version[1]." ".$version[2];
+					}
+					else if (preg_match("/MSIE ([0-9abpre\.]+)/is", $reader, $version)){
+						$reader = "Internet Explorer ".$version[1];
+					}
+					else if (preg_match("/RockMelt\/([^\s\.]+)/is", $reader, $version)) {
+						$reader = "RockMelt ".$version[1];
+					}
+					else if (preg_match("/Chrome\/([^\s\.]+)/is", $reader, $version)) {
+						$reader = "Chrome ".$version[1];
+					}
+					else if (preg_match("/Safari/is", $reader)) {
+						$reader = "Safari";
+					}
+					else if (preg_match("/Gecko/Uis", $reader)) {
+						$reader = "Other Mozilla browser";
+					}
+					else if (!preg_match("/Mozilla/Uis", $reader)){
+						$reader = preg_replace("/[\/;].*$/Uis", "", $reader);
+					}
+					else {
+						continue;
+					}
+			
+					foreach ($readers as $key => $d) {
+						if ($d["reader"] == $reader){
+							$readers[$key]["readers"] += $row->readers;
+							continue 2;
+						}
+					}
+			
+					$readers[] = array("reader" => $reader, "readers" => $row->readers);
+				}
+			}
+		
+			function sort_reader_array($a, $b) {
+				return $b["readers"] - $a["readers"];
+			}
+		
+			usort($readers, 'sort_reader_array');
+		
+			$max = $readers[0]["readers"];
+		
+			ob_start();
+		
+			?>
+			<table style="width: 100%;">
+				<thead>
+					<tr>
+						<th>&nbsp;</th>
+						<th><?php esc_html_e( 'Reader', 'feed-statistics' ); ?></th>
+						<th><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
+						<th>&nbsp;</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+				
+					$i = 1;
+		
+					foreach ($readers as $reader) {
+						$percentage = ceil($reader["readers"] / $max * 100);
+					
+						?>
+						<tr>
+							<td><?php echo $i++; ?></td>
+							<td style="width: 40%;"><?php echo esc_html( $reader["reader"] ); ?></td>
+							<td style="width: 15%;"><?php echo esc_html( $reader["readers"] ); ?></td>
+							<td style="width: 40%;">
+								<div class="graph" style="width: <?php echo $percentage; ?>%;">&nbsp;</div>
+							</td>
+						</tr>
+						<?php
+					}
+				
+					?>
+				</tbody>
+			</table>
 		</div>
 		<?php
 	}
 	
 	function feed_page() {
-		if (isset($_POST["feed_statistics_update"])){
-			update_option("feed_statistics_expiration_days",intval($_POST["feed_statistics_expiration_days"]));
-			update_option("feed_statistics_track_clickthroughs",intval(isset($_POST["feed_statistics_track_clickthroughs"])));
-			update_option("feed_statistics_track_postviews",intval(isset($_POST["feed_statistics_track_postviews"])));
-		} 
 		?>
 		<div class="wrap">
-			<h2><?php esc_html_e( 'Feed Options', 'feed-statistics' ); ?></h2>
-			<form method="post" style="width: 100%;">
-				<fieldset>
-					<input type="hidden" name="feed_statistics_update" value="1"/>
-					<p><?php printf( esc_html( __( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.' ) ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?></p>
-					<p>
-						<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php if (get_option("feed_statistics_track_clickthroughs")) { ?>checked="checked"<?php } ?>>
-						<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?><br />
-						<?php esc_html_e( 'This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
-					</p>
-					<p>
-						<input type="checkbox" name="feed_statistics_track_postviews" value="1" <?php if (get_option("feed_statistics_track_postviews")) { ?>checked="checked"<?php } ?>>
-						<?php esc_html_e( 'Track individual post views', 'feed-statistics' ); ?><br />
-						<?php esc_html_e( 'This is done via an invisible tracking image and will track views of posts by users that use feed readers that load images from your site.', 'feed-statistics' ); ?>
-					</p>
-					<input type="submit" name="Submit" value="<?php esc_attr_e( 'Update Options', 'feed-statistics' ); ?> &raquo;" />
-				</fieldset>	
+			<?php if ( ! empty( $_POST['feed_statistics_update'] ) ) { ?>
+				<div class="updated"><p><?php esc_html_e( 'Settings have been saved.', 'feed-statistics' ); ?></p></div>
+			<?php } ?>
+			
+			<div class="icon32" id="icon-options-general">
+				<br />
+			</div>
+			<h2><?php esc_html_e( 'Feed Statistics Settings', 'feed-statistics' ); ?></h2>
+			<form method="post">
+				<input type="hidden" name="feed_statistics_update" value="1"/>
+				
+				<table class="form-table">
+					<tbody>
+						<tr valign="top">
+							<th scope="row"><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
+							<td>
+								<?php printf( esc_html( __( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.' ) ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?>
+							</td>
+						</tr>
+						<tr valign="top">
+							<th scope="row"><?php esc_html_e( 'Clickthroughs', 'feed-statistics' ); ?></th>
+							<td>
+								<p>
+									<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php checked( get_option( 'feed_statistics_track_clickthroughs' ) ); ?> />
+									<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?>
+									<br />
+									<?php esc_html_e( 'This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
+								</p>
+							</td>
+						</tr>
+						<tr valign="top">
+							<th scope="row"><?php esc_html_e( 'Post views', 'feed-statistics' ); ?></th>
+							<td>
+								<p>
+									<input type="checkbox" name="feed_statistics_track_postviews" value="1" <?php checked( get_option( 'feed_statistics_track_postviews' ) ); ?> />
+									<?php esc_html_e( 'Track individual post views', 'feed-statistics' ); ?>
+									<br />
+									<?php esc_html_e( 'This is done via an invisible tracking image and will track views of posts by users that use feed readers that load images from your site.', 'feed-statistics' ); ?>
+								</p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<p class="submit">
+					<input class="button-primary" type="submit" name="Submit" value="<?php esc_attr_e( 'Update Options', 'feed-statistics' ); ?>" />
+				</p>
 			</form>
 		</div>
 		<?php
 	}
 	
-	function reader_stats() {
-		global $wpdb;
-		
-		$expiration_days = get_option("feed_statistics_expiration_days");
-		
-		$sql = "DELETE FROM `".$wpdb->prefix."feed_subscribers` WHERE `date` < '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days") * 3))."'";
-		$wpdb->get_results($sql);
-		
-		$q = "SELECT
-				CASE 
-					WHEN 
-						LOCATE('###',`identifier`) != 0 THEN SUBSTRING(`identifier`, 1, LOCATE(' ',`identifier`))
-					ELSE
-						`user_agent`
-				END AS `reader`,
-			SUM(`subscribers`) `readers`
-			FROM `".$wpdb->prefix."feed_subscribers`
-			WHERE `date` > '".date("Y-m-d H:i:s", time() - (60 * 60 * 24 * get_option("feed_statistics_expiration_days")))."'
-			GROUP BY `reader`
-			ORDER BY `readers` DESC";
-		$results = $wpdb->get_results($q);
-		
-		$readers = array();
-		
-		if (!empty($results)){
-			foreach ($results as $row){
-				$reader = $row->reader;
-			
-				$version = array();
-			
-				if ($reader == '') {
-					$reader = "Unknown (Pending)";
-				} 
-				else if (preg_match("/Navigator\/([0-9abpre\.]+)/is", $reader, $version)){
-					$reader = "Netscape Navigator ".$version[1];
-				}
-				else if (preg_match("/Opera\/([0-9abpre\.]+)/is", $reader, $version)){
-					$reader = "Opera ".$version[1];
-				}
-				else if (preg_match("/Flock\/([0-9abpre\.]+)/is", $reader, $version)){
-					$reader = "Flock ".$version[1];
-				}
-				else if (preg_match("/(Firefox|BonEcho|GranParadiso|Aurora|Minefield)\/([0-9abpre\.]+)/is", $reader, $version)) {
-					$reader = "Mozilla ".$version[1]." ".$version[2];
-				}
-				else if (preg_match("/MSIE ([0-9abpre\.]+)/is", $reader, $version)){
-					$reader = "Internet Explorer ".$version[1];
-				}
-				else if (preg_match("/RockMelt\/([^\s\.]+)/is", $reader, $version)) {
-					$reader = "RockMelt ".$version[1];
-				}
-				else if (preg_match("/Chrome\/([^\s\.]+)/is", $reader, $version)) {
-					$reader = "Chrome ".$version[1];
-				}
-				else if (preg_match("/Safari/is", $reader)) {
-					$reader = "Safari";
-				}
-				else if (preg_match("/Gecko/Uis", $reader)) {
-					$reader = "Other Mozilla browser";
-				}
-				else if (!preg_match("/Mozilla/Uis", $reader)){
-					$reader = preg_replace("/[\/;].*$/Uis", "", $reader);
-				}
-				else {
-					continue;
-				}
-			
-				foreach ($readers as $key => $d) {
-					if ($d["reader"] == $reader){
-						$readers[$key]["readers"] += $row->readers;
-						continue 2;
-					}
-				}
-			
-				$readers[] = array("reader" => $reader, "readers" => $row->readers);
-			}
-		}
-		
-		function sort_reader_array($a, $b) {
-			return $b["readers"] - $a["readers"];
-		}
-		
-		usort($readers, 'sort_reader_array');
-		
-		$max = $readers[0]["readers"];
-		$rv = '<table style="width: 100%;">';
-		$rv .= '<thead><tr><th>&nbsp;</th><th>Reader</th><th>Subscribers</th><th>&nbsp;</th></tr></thead><tbody>';
-		
-		$i = 1;
-		
-		foreach ($readers as $reader) {
-			$percentage = ceil($reader["readers"] / $max * 100);
-			
-			$rv .= '<tr><td>'.$i++.'.</td><td style="width: 40%;">'.$reader["reader"].'</td><td style="width: 15%;">'.$reader["readers"].'</td><td style="width: 40%;"><div class="graph" style="width: '.$percentage.'%;">&nbsp;</div></td></tr>';
-		}
-		
-		$rv .= "</tbody></table>";
-		
-		return $rv;
-	}
-	
 	function widget_register() {
-		if (function_exists('register_sidebar_widget')) {
-			register_sidebar_widget('Feed Statistics', 'feed_statistics_widget');
-		}
+		wp_register_sidebar_widget( 'feed-statistics-widget', __( 'Feed Statistics', 'feed-statistics' ), array( 'FEED_STATS', 'widget' ) );
 	}
 	
 	function widget($args) {
-		extract($args);
+		echo $args['before_widget'];
 		
-		echo $before_widget;
 		echo '<span class="subscriber_count">';
-		feed_subscribers();
+			feed_subscribers();
 		echo '</span>';
-		echo $after_widget;
+		
+		echo $args['after_widget'];
 	}
 	
 	function clickthrough_replace($content) {
@@ -789,7 +1025,7 @@ CREATE TABLE ".$wpdb->prefix."feed_subscribers (
 function feed_subscribers(){
 	$s = FEED_STATS::how_many_subscribers();
 	
-	printf( _n( '%d feed subscriber', '%d feed subscribers', $s ), $s );
+	printf( _n( '%s feed subscriber', '%s feed subscribers', $s ), number_format_i18n( $s ) );
 }
 
 function feed_statistics_options() {
@@ -838,5 +1074,3 @@ if(function_exists('get_option')){
 if ( function_exists( 'register_activation_hook' ) ) {
 	register_activation_hook( __FILE__, array( 'FEED_STATS', 'sql' ) );
 }
-
-?>
