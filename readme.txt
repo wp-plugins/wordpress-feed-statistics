@@ -4,13 +4,13 @@ Donate link: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Tags: rss, statistics, feeds, newsfeed, stats
 Requires at least: 3.2
 Tested up to: 3.4.2
-Stable tag: 1.5
+Stable tag: 2.0
 
 Compiles statistics about who is reading your blog via a feed reader and what posts they're reading.
 
 == Description ==
 
-Feed Statistics is a plugin for Wordpress blogs that tracks statistics for your RSS/Atom feeds, including the number of subscribers, which feed readers they're using, which posts they're viewing and which links they're clicking on.
+Feed Statistics is a plugin that tracks statistics for your RSS/Atom feeds, including the number of subscribers, which feed readers they're using, which posts they're viewing and which links they're clicking on.
 
 You have two ways to display your subscriber count. You can either add the following code to your theme (in your sidebar, for example):
 
@@ -18,13 +18,9 @@ You have two ways to display your subscriber count. You can either add the follo
 
 This will display a simple "123 feed subscribers" line of text that you can markup however you want. If your theme is widget-compatible, you can instead use the Feed Statistics widget, which will display the same text, but inside of an easy-to-manage widget. (If you want to style the widget text, it is inside a tag.)
 
-The plugin also adds a "Feed" section to your Wordpress administration panel. This section has four subsections: Feed (Options), Feed Readers, Post Views, and Clickthroughs.
+The plugin also adds a "Feed Statistics" menu to your dashboard. This section has four subsections: Feed Statistics (Options), Feed Readers, Post Views, and Clickthroughs.
 
 It will take a few days for the subscriber count to become accurate, so you may want to wait a day or two between installing/activating the plugin and publicly displaying your subscriber count.
-
-== Installation ==
-
-To install, upload feed-statistics.php to the wp-content/plugins/ directory of your blog, and activate the plugin from your Administration panel.
 
 == Screenshots ==
 
