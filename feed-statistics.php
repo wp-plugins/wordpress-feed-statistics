@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via a feed reader and what posts they're reading.
-Version: 2.0
+Version: 2.1a1
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 License: GPL2
@@ -708,10 +708,17 @@ class FEED_STATS {
 			<p>
 				<?php
 				
-				if ( get_option( 'feed_statistics_track_postviews' ) )
-					esc_html_e( 'You currently have post view tracking turned on.', 'feed-statistics' );
-				else
-					esc_html_e( 'You currently have post view tracking turned off.', 'feed-statistics' );
+				if ( get_option( 'feed_statistics_track_postviews' ) ) {
+					if ( 1 == get_option( 'rss_use_excerpt' ) ) {
+						printf( __( 'You have post view tracking turned on, but you have your feeds set to "Summary" mode. To track post views, you should select "Full text" mode on the <a href="%s">Reading settings</a> page.', 'feed-statistics' ), admin_url( 'options-reading.php' ) );
+					}
+					else {
+						esc_html_e( 'You have post view tracking turned on.', 'feed-statistics' );
+					}
+				}
+				else {
+					esc_html_e( 'You have post view tracking turned off.', 'feed-statistics' );
+				}
 				
 				?>
 			</p>
