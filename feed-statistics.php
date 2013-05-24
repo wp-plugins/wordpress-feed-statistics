@@ -346,7 +346,7 @@ class FEED_STATS {
 					`referrer_id` INT(11) NOT NULL DEFAULT '0',
 					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
 					PRIMARY KEY (id)
-				)";
+				) ENGINE=MyISAM DEFAULT CHARSET=latin1";
 				$wpdb->query($sql);
 				
 				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_links` (
@@ -354,7 +354,7 @@ class FEED_STATS {
 					`url` VARCHAR(255) NOT NULL DEFAULT '',
 					PRIMARY KEY (`id`),
 					UNIQUE KEY `url` (`url`)
-				)";
+				) ENGINE=MyISAM DEFAULT CHARSET=latin1";
 				$wpdb->query($sql);
 				
 				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_referrers` (
@@ -362,7 +362,7 @@ class FEED_STATS {
 					`url` VARCHAR(255) NOT NULL DEFAULT '',
 					PRIMARY KEY (`id`),
 					UNIQUE KEY `url` (`url`)
-				)";
+				) ENGINE=MyISAM DEFAULT CHARSET=latin1";
 				$wpdb->query($sql);
 				
 				$sql = "CREATE TABLE IF NOT EXISTS `".$wpdb->prefix."feed_postviews` (
@@ -370,7 +370,7 @@ class FEED_STATS {
 					`post_id` INT(11) NOT NULL DEFAULT '0',
 					`time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
 					PRIMARY KEY (id)
-				)";
+				) ENGINE=MyISAM DEFAULT CHARSET=latin1";
 				$wpdb->query($sql);
 				
 				update_option("feed_statistics_track_clickthroughs", "0");
@@ -415,7 +415,7 @@ class FEED_STATS {
 						url varchar(1000) NOT NULL,
 						PRIMARY KEY  (id),
 						UNIQUE KEY url_hash (url_hash)
-					)"
+					) ENGINE=MyISAM DEFAULT CHARSET=latin1"
 				);
 
 				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_postviews
@@ -424,7 +424,7 @@ class FEED_STATS {
 						post_id int(11) NOT NULL DEFAULT '0',
 						time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 						PRIMARY KEY  (id)
-					)"
+					) ENGINE=MyISAM DEFAULT CHARSET=latin1"
 				);
 
 				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_subscribers
@@ -435,7 +435,7 @@ class FEED_STATS {
 						date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 						user_agent varchar(255) DEFAULT NULL,
 						PRIMARY KEY  (identifier,feed)
-					)"
+					) ENGINE=MyISAM DEFAULT CHARSET=latin1"
 				);
 				
 				$wpdb->query( "CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."feed_clickthroughs
@@ -444,7 +444,7 @@ class FEED_STATS {
 						link_id int(11) NOT NULL DEFAULT '0',
 						time datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 						PRIMARY KEY  (id)
-					)"
+					) ENGINE=MyISAM DEFAULT CHARSET=latin1"
 				);
 			break;
 		}
