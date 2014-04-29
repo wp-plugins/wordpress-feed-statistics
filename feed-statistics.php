@@ -8,9 +8,11 @@ Version: 2.1a1
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 License: GPL2
+Domain Path: /languages/
+Text Domain: feed-statistics
 */
 
-define( 'FEED_STATISTICS_VERSION', '2.0' );
+define( 'FEED_STATISTICS_VERSION', '2.1a1' );
 
 if (preg_match("/feed\-statistics\.php$/", $_SERVER["PHP_SELF"])) {
 	/**
@@ -191,7 +193,7 @@ class FEED_STATS {
 			update_option( "feed_statistics_track_postviews", intval( isset( $_POST["feed_statistics_track_postviews"] ) ) );
 		} 
 		
-		load_plugin_textdomain( 'feed-statistics', false, dirname( __FILE__ ) . '/languages' );
+		load_plugin_textdomain( 'feed-statistics', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 		
 		if (FEED_STATS::is_feed_url()){
 			$user_agent = $_SERVER["HTTP_USER_AGENT"];
@@ -946,7 +948,7 @@ class FEED_STATS {
 						<tr valign="top">
 							<th scope="row"><?php esc_html_e( 'Subscribers', 'feed-statistics' ); ?></th>
 							<td>
-								<?php printf( esc_html__( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.' ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?>
+								<?php printf( esc_html__( 'Count users who have requested a feed within the last %1$s days as subscribers. You currently have %2$s subscribers.', 'feed-statistics' ), '<input type="text" size="2" name="feed_statistics_expiration_days" value="' . intval( get_option("feed_statistics_expiration_days") ) . '" />', number_format_i18n( FEED_STATS::how_many_subscribers() ) ); ?>
 							</td>
 						</tr>
 						<tr valign="top">
