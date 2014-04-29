@@ -38,6 +38,21 @@ class FEED_STATS {
 			die();
 		}
 
+		add_action('admin_menu', array('FEED_STATS','add_options_menu'));
+		add_action('admin_head', array('FEED_STATS','admin_head'));
+
+		if (get_option("feed_statistics_track_clickthroughs")) {
+			add_filter('the_content', array('FEED_STATS','clickthrough_replace'));
+		}
+
+		if (get_option("feed_statistics_track_postviews")) {
+			add_filter('the_content', array('FEED_STATS','postview_tracker'));
+		}
+		
+		add_filter( 'plugin_action_links', 'feed_statistics_action_links', 10, 2 );
+
+		self::widget_register();
+
 		if ( isset( $_GET['feed-stats-url'] ) ) {
 			$url = trim( base64_decode( $_GET['feed-stats-url'] ) );
 			
@@ -980,29 +995,8 @@ function feed_statistics_action_links( $links, $file ) {
     return $links;
 }
 
-if(function_exists('add_action')){
-	add_action('init', array('FEED_STATS','init'));
-	add_action('init', array('FEED_STATS','widget_register'));
-	add_action('admin_menu', array('FEED_STATS','add_options_menu'));
-	add_action('admin_head', array('FEED_STATS','admin_head'));
-	
-	add_action( 'plugins_loaded', array( 'FEED_STATS', 'db_setup' ) );
-}
+add_action('init', array('FEED_STATS','init'));
 
-if ( function_exists( 'add_filter' ) ) {
-	add_filter( 'plugin_action_links', 'feed_statistics_action_links', 10, 2 );
-}
+add_action( 'plugins_loaded', array( 'FEED_STATS', 'db_setup' ) );
 
-if(function_exists('get_option')){
-	if (get_option("feed_statistics_track_clickthroughs")) {
-		add_filter('the_content', array('FEED_STATS','clickthrough_replace'));
-	}
-
-	if (get_option("feed_statistics_track_postviews")) {
-		add_filter('the_content', array('FEED_STATS','postview_tracker'));
-	}
-}
-
-if ( function_exists( 'register_activation_hook' ) ) {
-	register_activation_hook( __FILE__, array( 'FEED_STATS', 'sql' ) );
-}
+register_activation_hook( __FILE__, array( 'FEED_STATS', 'sql' ) );
