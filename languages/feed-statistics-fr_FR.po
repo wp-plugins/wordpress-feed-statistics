@@ -1,0 +1,163 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WordPress Feed Statistics\n"
+"POT-Creation-Date: 2014-04-18 19:37+0100\n"
+"PO-Revision-Date: 2014-04-18 19:56+0100\n"
+"Last-Translator: \n"
+"Language-Team: Jojaba <jojaba@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.7\n"
+"X-Poedit-KeywordsList: _e;__;_x;_n;esc_html_e;esc_html__;esc_attr_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: G:\\wamp\\www\\insa\\wp-content\\plugins\\wordpress-"
+"feed-statistics\n"
+
+#: wordpress-feed-statistics/feed-statistics.php:523
+#: wordpress-feed-statistics/feed-statistics.php:934
+msgid "Feed Statistics Settings"
+msgstr "Paramètres WordPress Feed Statistics"
+
+#: wordpress-feed-statistics/feed-statistics.php:523
+#: wordpress-feed-statistics/feed-statistics.php:977
+msgid "Feed Statistics"
+msgstr "Statistiques des flux"
+
+#: wordpress-feed-statistics/feed-statistics.php:525
+msgid "Top Feeds"
+msgstr "Abonnements "
+
+#: wordpress-feed-statistics/feed-statistics.php:526
+msgid "Feed Readers"
+msgstr "Lecteurs de flux"
+
+#: wordpress-feed-statistics/feed-statistics.php:529
+msgid "Post Views"
+msgstr "Articles vus"
+
+#: wordpress-feed-statistics/feed-statistics.php:532
+#: wordpress-feed-statistics/feed-statistics.php:947
+msgid "Clickthroughs"
+msgstr "Clics sur liens"
+
+#: wordpress-feed-statistics/feed-statistics.php:543
+msgid "Most popular links in your feed (last 30 days)"
+msgstr "Les liens les plus visités dans votre flux (derniers 30 jours)"
+
+#: wordpress-feed-statistics/feed-statistics.php:548
+msgid "You currently have clickthrough tracking turned on."
+msgstr "La détection de clics sur liens est actuellement active."
+
+#: wordpress-feed-statistics/feed-statistics.php:550
+msgid "You currently have clickthrough tracking turned off."
+msgstr "La détection de clics sur liens est actuellement désactivée."
+
+#: wordpress-feed-statistics/feed-statistics.php:559
+msgid "Outgoing Link"
+msgstr "Lien visité"
+
+#: wordpress-feed-statistics/feed-statistics.php:560
+msgid "Clicks"
+msgstr "Nombre de clics"
+
+#: wordpress-feed-statistics/feed-statistics.php:630
+msgid "Your most popular feeds"
+msgstr "Vos flux les plus populaires"
+
+#: wordpress-feed-statistics/feed-statistics.php:635
+msgid "Feed URL"
+msgstr "URL du flux"
+
+#: wordpress-feed-statistics/feed-statistics.php:636
+#: wordpress-feed-statistics/feed-statistics.php:893
+#: wordpress-feed-statistics/feed-statistics.php:941
+msgid "Subscribers"
+msgstr "Abonnés"
+
+#: wordpress-feed-statistics/feed-statistics.php:708
+msgid "Your most popular posts (last 30 days)"
+msgstr "Vos articles les plus populaires (30 derniers jours)"
+
+#: wordpress-feed-statistics/feed-statistics.php:713
+msgid "You currently have post view tracking turned on."
+msgstr "La détection des articles lus est active."
+
+#: wordpress-feed-statistics/feed-statistics.php:715
+msgid "You currently have post view tracking turned off."
+msgstr "La détection des articles lus est désactivée."
+
+#: wordpress-feed-statistics/feed-statistics.php:723
+msgid "Post Title"
+msgstr "Titre de l'article"
+
+#: wordpress-feed-statistics/feed-statistics.php:724
+msgid "Views"
+msgstr "Vues"
+
+#: wordpress-feed-statistics/feed-statistics.php:791
+msgid "Top Feed Readers"
+msgstr "Lecteurs de flux utilisés"
+
+#: wordpress-feed-statistics/feed-statistics.php:892
+msgid "Reader"
+msgstr "Lecteur"
+
+#: wordpress-feed-statistics/feed-statistics.php:928
+msgid "Settings have been saved."
+msgstr "Les paramètres ont été enregistrés."
+
+#: wordpress-feed-statistics/feed-statistics.php:943
+#, php-format
+msgid ""
+"Count users who have requested a feed within the last %1$s days as "
+"subscribers. You currently have %2$s subscribers."
+msgstr ""
+"Comptabiliser les utilisateurs qui ont effectué une requête en direction "
+"d'un flux dans les %1$s derniers jours en tant qu'abonnés. Actuellement, il "
+"y a %2$s abonnés."
+
+#: wordpress-feed-statistics/feed-statistics.php:950
+msgid "Track which links your subscribers click"
+msgstr "Détecter sur quels liens vos abonnés ont cliqué"
+
+#: wordpress-feed-statistics/feed-statistics.php:952
+msgid ""
+"This requires Wordpress to route all links in your posts back through your "
+"site so that clicks can be recorded.  The user shouldn't notice a difference."
+msgstr ""
+"Cela nécessite que WordPress réalise un routage en retour de tous vos liens "
+"de vos articles vers votre site afin que vos clics puissent être "
+"enregistrés. L'utilisateur ne devrait pas constater de différence."
+
+#: wordpress-feed-statistics/feed-statistics.php:957
+msgid "Post views"
+msgstr "Articles vus"
+
+#: wordpress-feed-statistics/feed-statistics.php:960
+msgid "Track individual post views"
+msgstr "Détecter le nombre d'articles lus"
+
+#: wordpress-feed-statistics/feed-statistics.php:962
+msgid ""
+"This is done via an invisible tracking image and will track views of posts "
+"by users that use feed readers that load images from your site."
+msgstr ""
+"Ceci est effectué à l'aide d'une image de pistage invisible et détectera le "
+"nombre d'articles lus par les abonnés qui utilisent des lecteurs de flux "
+"chargeant les images de votre site."
+
+#: wordpress-feed-statistics/feed-statistics.php:969
+msgid "Update Options"
+msgstr "Mettre à jour les options"
+
+#: wordpress-feed-statistics/feed-statistics.php:1035
+#, php-format
+msgid "%s feed subscriber"
+msgstr "%s abonnés aux flux"
+
+#: wordpress-feed-statistics/feed-statistics.php:1064
+msgid "Settings"
+msgstr "Paramètres"
