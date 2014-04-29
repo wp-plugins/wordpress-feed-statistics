@@ -397,7 +397,7 @@ class FEED_STATS {
 			return true;
 		}
 		
-		return false;
+		return apply_filters( 'feed_statistics_is_feed_url', false );
 	}
 	
 	function how_many_subscribers() {
