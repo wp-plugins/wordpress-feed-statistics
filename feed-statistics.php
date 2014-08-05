@@ -932,7 +932,7 @@ class FEED_STATS {
 			return $url;
 		}
 		
-		return esc_url( home_url( '/?feed-stats-url=' . base64_encode( $url ) ) );
+		return esc_url( home_url( '/?feed-stats-url=' . urlencode( base64_encode( $url ) ) ) );
 	}
 	
 	static function postview_tracker($content) {
