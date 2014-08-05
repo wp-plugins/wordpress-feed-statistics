@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via a feed reader and what posts they're reading.
-Version: 3.0
+Version: 4.0a1
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 License: GPL2
@@ -12,7 +12,7 @@ Domain Path: /languages/
 Text Domain: feed-statistics
 */
 
-define( 'FEED_STATISTICS_VERSION', '3.0' );
+define( 'FEED_STATISTICS_VERSION', '4.0a1' );
 
 class FEED_STATS {
 	static function init(){
@@ -372,7 +372,7 @@ class FEED_STATS {
 		}
 	}
 	
-	function is_feed_url() {
+	static function is_feed_url() {
 		switch (basename($_SERVER['PHP_SELF'])) {
 			case 'wp-rdf.php':
 			case 'wp-rss.php':
@@ -400,7 +400,7 @@ class FEED_STATS {
 		return apply_filters( 'feed_statistics_is_feed_url', false );
 	}
 	
-	function how_many_subscribers() {
+	static function how_many_subscribers() {
 		global $wpdb;
 		
 		$results = $wpdb->get_results(
@@ -440,7 +440,7 @@ class FEED_STATS {
 		return intval( $s );
 	}
 	
-	function add_options_menu() {
+	static function add_options_menu() {
 		add_menu_page( __( 'Feed Statistics Settings', 'feed-statistics' ), __( 'Feed Statistics', 'feed-statistics' ), 'publish_posts', basename(__FILE__), 'feed_statistics_feed_page' );
 		
 		add_submenu_page( basename( __FILE__ ), __( 'Top Feeds', 'feed-statistics' ), __( 'Top Feeds', 'feed-statistics' ), 'publish_posts', 'feedstats-topfeeds', 'feed_statistics_topfeeds_page' );
@@ -453,7 +453,7 @@ class FEED_STATS {
 			add_submenu_page( basename( __FILE__ ), __( 'Clickthroughs', 'feed-statistics' ), __( 'Clickthroughs', 'feed-statistics' ), 'publish_posts', 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page' );
 	}
 	
-	function clickthroughs_page(){
+	static function clickthroughs_page(){
 		global $wpdb;
 		
 		?>
@@ -540,7 +540,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function topfeeds_page(){
+	static function topfeeds_page(){
 		global $wpdb;
 		
 		?>
@@ -618,7 +618,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function postviews_page(){
+	static function postviews_page(){
 		global $wpdb;
 		
 		?>
@@ -708,7 +708,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function feedreaders_page(){
+	static function feedreaders_page(){
 		global $wpdb;
 		
 		?>
@@ -849,7 +849,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function feed_page() {
+	static function feed_page() {
 		?>
 		<div class="wrap">
 			<?php if ( ! empty( $_POST['feed_statistics_update'] ) ) { ?>
@@ -901,11 +901,11 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function widget_register() {
+	static function widget_register() {
 		wp_register_sidebar_widget( 'feed-statistics-widget', __( 'Feed Statistics', 'feed-statistics' ), array( 'FEED_STATS', 'widget' ) );
 	}
 	
-	function widget($args) {
+	static function widget($args) {
 		echo $args['before_widget'];
 		
 		echo '<span class="subscriber_count">';
@@ -915,7 +915,7 @@ class FEED_STATS {
 		echo $args['after_widget'];
 	}
 	
-	function clickthrough_replace($content) {
+	static function clickthrough_replace($content) {
 		if (is_feed()) {
 			$this_file = __FILE__;
 			
@@ -935,7 +935,7 @@ class FEED_STATS {
 		return esc_url( home_url( '/?feed-stats-url=' . base64_encode( $url ) ) );
 	}
 	
-	function postview_tracker($content) {
+	static function postview_tracker($content) {
 		global $id;
 		
 		if (is_feed()) {
@@ -945,7 +945,7 @@ class FEED_STATS {
 		return $content;
 	}
 	
-	function admin_head() {
+	static function admin_head() {
 		?>
 		<style type="text/css">
 			div.graph {
