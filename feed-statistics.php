@@ -877,7 +877,7 @@ class FEED_STATS {
 								<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php checked( get_option( 'feed_statistics_track_clickthroughs' ) ); ?> />
 								<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?>
 								<p class="description">
-									<?php esc_html_e( 'This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
+									<?php esc_html_e( 'This requires WordPress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
 								</p>
 							</td>
 						</tr>
