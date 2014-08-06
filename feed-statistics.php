@@ -15,6 +15,8 @@ Text Domain: feed-statistics
 define( 'FEED_STATISTICS_VERSION', '4.0a1' );
 
 class FEED_STATS {
+	const LINK_REGEX = "(<a[^>]+href=)(['\"])([^\#][^'\"]+)(['\"])([^>]*>)";
+	
 	static function init(){
 		global $wpdb;
 		
@@ -99,11 +101,34 @@ class FEED_STATS {
 					);
 				}
 			}
-
+			
 			$wpdb->show_errors();
-
-			header( 'Location: ' . $url );
-			die();
+			
+			$whitelisted_redirect = false;
+			
+			if ( isset( $_GET['feed-stats-url-post-id'] ) ) {
+				$post = get_post( $_GET['feed-stats-url-post-id'] );
+				
+				if ( $post ) {
+					preg_match_all( "/" . self::LINK_REGEX . "/i", $post->post_content, $anchor_tags );
+					
+					$links = $anchor_tags[3];
+					
+					if ( in_array( $url, $links ) ) {
+						$whitelisted_redirect = true;
+					}
+				}
+			}
+			
+			if ( ! $whitelisted_redirect ) {
+				$redirection_warning = '<p>' . sprintf( __( 'The link you clicked is attempting to send you to %s If you do not want to visit that site, please close this page or return to the previous page. If you want to continue, copy and paste the URL above into your browser&#8217;s address bar.', 'feed-statistics' ) . '</p>', '</p><p><code>' . esc_html( $url ) . '</code></p><p>' );
+				
+				wp_die( $redirection_warning, __( 'Redirection Notice', 'feed-statistics' ), array( 'back_link' => true, 'response' => 403 ) );
+			}
+			else {
+				header( 'Location: ' . $url );
+				die();
+			}
 		}
 		
 		if ( isset( $_POST["feed_statistics_update"] ) ) {
@@ -921,7 +946,7 @@ class FEED_STATS {
 			
 			$redirect_url = home_url( '/?feed-stats-url=' );
 		
-			$content = preg_replace("/(<a[^>]+href=)(['\"])([^\#][^'\"]+)(['\"])([^>]*>)/ie", "'$1\"' . FEED_STATS::generate_clickthrough_url( '\\3' ) . '\"$5'", $content);
+			$content = preg_replace( "/" . self::LINK_REGEX . "/ie", "'$1\"' . FEED_STATS::generate_clickthrough_url( '\\3' ) . '\"$5'", $content);
 		}	
 		
 		return $content;
@@ -932,7 +957,9 @@ class FEED_STATS {
 			return $url;
 		}
 		
-		return esc_url( home_url( '/?feed-stats-url=' . urlencode( base64_encode( $url ) ) ) );
+		$post_id = get_the_ID();
+		
+		return esc_url( home_url( '/?feed-stats-url=' . urlencode( base64_encode( $url ) ) ) . '&feed-stats-url-post-id=' . urlencode( $post_id ) );
 	}
 	
 	static function postview_tracker($content) {
