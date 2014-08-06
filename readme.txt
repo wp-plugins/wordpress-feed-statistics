@@ -2,7 +2,7 @@
 Contributors: cfinke
 Donate link: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Tags: rss, statistics, feeds, newsfeed, stats
-Requires at least: 3.2
+Requires at least: 3.7
 Tested up to: 3.9.1
 Stable tag: 3.0
 
@@ -28,3 +28,9 @@ It will take a few days for the subscriber count to become accurate, so you may 
 2. Displays which feed readers your subscribers are using.
 3. If you have post view tracking turned on (it's enabled by default), this page will show the posts in your RSS feed that are most popular.
 4. If you have clickthrough tracking turned on (it's disabled by default), this page will show the links in your posts that your feed subscribers are clicking on.
+
+== Changelog ==
+
+= 4.0 =
+* Fixed bug allowing Feed Statistics to be used as an open redirect
+* Fixed bug that didn't track clickthroughs on links with uppercase anchor tags
