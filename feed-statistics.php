@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via a feed reader and what posts they're reading.
-Version: 2.1a1
+Version: 4.0
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 License: GPL2
@@ -12,9 +12,11 @@ Domain Path: /languages/
 Text Domain: feed-statistics
 */
 
-define( 'FEED_STATISTICS_VERSION', '2.1a1' );
+define( 'FEED_STATISTICS_VERSION', '4.0' );
 
 class FEED_STATS {
+	const LINK_REGEX = "(<a[^>]+href=)(['\"])([^\#][^'\"]+)(['\"])([^>]*>)";
+	
 	static function init(){
 		global $wpdb;
 		
@@ -65,7 +67,7 @@ class FEED_STATS {
 				
 				$link_id = $wpdb->get_var(
 					$wpdb->prepare(
-						"SELECT id FROM " . $wpdb->prefix . "feed_links WHERE url=%d",
+						"SELECT id FROM " . $wpdb->prefix . "feed_links WHERE url=%s",
 						$url
 					)
 				);
@@ -99,11 +101,34 @@ class FEED_STATS {
 					);
 				}
 			}
-
+			
 			$wpdb->show_errors();
-
-			header( 'Location: ' . $url );
-			die();
+			
+			$whitelisted_redirect = false;
+			
+			if ( isset( $_GET['feed-stats-url-post-id'] ) ) {
+				$post = get_post( $_GET['feed-stats-url-post-id'] );
+				
+				if ( $post ) {
+					preg_match_all( "/" . self::LINK_REGEX . "/i", $post->post_content, $anchor_tags );
+					
+					$links = $anchor_tags[3];
+					
+					if ( in_array( $url, $links ) ) {
+						$whitelisted_redirect = true;
+					}
+				}
+			}
+			
+			if ( ! $whitelisted_redirect ) {
+				$redirection_warning = '<p>' . sprintf( __( 'The link you clicked is attempting to send you to %s If you do not want to visit that site, please close this page or return to the previous page. If you want to continue, copy and paste the URL above into your browser&#8217;s address bar.', 'feed-statistics' ) . '</p>', '</p><p><code>' . esc_html( $url ) . '</code></p><p>' );
+				
+				wp_die( $redirection_warning, __( 'Redirection Notice', 'feed-statistics' ), array( 'back_link' => true, 'response' => 403 ) );
+			}
+			else {
+				header( 'Location: ' . $url );
+				die();
+			}
 		}
 		
 		if ( isset( $_POST["feed_statistics_update"] ) ) {
@@ -372,7 +397,7 @@ class FEED_STATS {
 		}
 	}
 	
-	function is_feed_url() {
+	static function is_feed_url() {
 		switch (basename($_SERVER['PHP_SELF'])) {
 			case 'wp-rdf.php':
 			case 'wp-rss.php':
@@ -397,10 +422,10 @@ class FEED_STATS {
 			return true;
 		}
 		
-		return false;
+		return apply_filters( 'feed_statistics_is_feed_url', false );
 	}
 	
-	function how_many_subscribers() {
+	static function how_many_subscribers() {
 		global $wpdb;
 		
 		$results = $wpdb->get_results(
@@ -440,7 +465,7 @@ class FEED_STATS {
 		return intval( $s );
 	}
 	
-	function add_options_menu() {
+	static function add_options_menu() {
 		add_menu_page( __( 'Feed Statistics Settings', 'feed-statistics' ), __( 'Feed Statistics', 'feed-statistics' ), 'publish_posts', basename(__FILE__), 'feed_statistics_feed_page' );
 		
 		add_submenu_page( basename( __FILE__ ), __( 'Top Feeds', 'feed-statistics' ), __( 'Top Feeds', 'feed-statistics' ), 'publish_posts', 'feedstats-topfeeds', 'feed_statistics_topfeeds_page' );
@@ -453,7 +478,7 @@ class FEED_STATS {
 			add_submenu_page( basename( __FILE__ ), __( 'Clickthroughs', 'feed-statistics' ), __( 'Clickthroughs', 'feed-statistics' ), 'publish_posts', 'feedstats-clickthroughs', 'feed_statistics_clickthroughs_page' );
 	}
 	
-	function clickthroughs_page(){
+	static function clickthroughs_page(){
 		global $wpdb;
 		
 		?>
@@ -540,7 +565,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function topfeeds_page(){
+	static function topfeeds_page(){
 		global $wpdb;
 		
 		?>
@@ -618,7 +643,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function postviews_page(){
+	static function postviews_page(){
 		global $wpdb;
 		
 		?>
@@ -708,7 +733,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function feedreaders_page(){
+	static function feedreaders_page(){
 		global $wpdb;
 		
 		?>
@@ -849,7 +874,7 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function feed_page() {
+	static function feed_page() {
 		?>
 		<div class="wrap">
 			<?php if ( ! empty( $_POST['feed_statistics_update'] ) ) { ?>
@@ -877,7 +902,7 @@ class FEED_STATS {
 								<input type="checkbox" name="feed_statistics_track_clickthroughs" value="1" <?php checked( get_option( 'feed_statistics_track_clickthroughs' ) ); ?> />
 								<?php esc_html_e( 'Track which links your subscribers click', 'feed-statistics' ); ?>
 								<p class="description">
-									<?php esc_html_e( 'This requires Wordpress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
+									<?php esc_html_e( 'This requires WordPress to route all links in your posts back through your site so that clicks can be recorded.  The user shouldn\'t notice a difference.', 'feed-statistics' ); ?>
 								</p>
 							</td>
 						</tr>
@@ -901,11 +926,11 @@ class FEED_STATS {
 		<?php
 	}
 	
-	function widget_register() {
+	static function widget_register() {
 		wp_register_sidebar_widget( 'feed-statistics-widget', __( 'Feed Statistics', 'feed-statistics' ), array( 'FEED_STATS', 'widget' ) );
 	}
 	
-	function widget($args) {
+	static function widget($args) {
 		echo $args['before_widget'];
 		
 		echo '<span class="subscriber_count">';
@@ -915,13 +940,13 @@ class FEED_STATS {
 		echo $args['after_widget'];
 	}
 	
-	function clickthrough_replace($content) {
+	static function clickthrough_replace($content) {
 		if (is_feed()) {
 			$this_file = __FILE__;
 			
 			$redirect_url = home_url( '/?feed-stats-url=' );
 		
-			$content = preg_replace("/(<a[^>]+href=)(['\"])([^\#][^'\"]+)(['\"])([^>]*>)/e", "'$1\"' . FEED_STATS::generate_clickthrough_url( '\\3' ) . '\"$5'", $content);
+			$content = preg_replace( "/" . self::LINK_REGEX . "/ie", "'$1\"' . FEED_STATS::generate_clickthrough_url( '\\3' ) . '\"$5'", $content);
 		}	
 		
 		return $content;
@@ -932,10 +957,12 @@ class FEED_STATS {
 			return $url;
 		}
 		
-		return esc_url( home_url( '/?feed-stats-url=' . base64_encode( $url ) ) );
+		$post_id = get_the_ID();
+		
+		return esc_url( home_url( '/?feed-stats-url=' . urlencode( base64_encode( $url ) ) ) . '&feed-stats-url-post-id=' . urlencode( $post_id ) );
 	}
 	
-	function postview_tracker($content) {
+	static function postview_tracker($content) {
 		global $id;
 		
 		if (is_feed()) {
@@ -945,7 +972,7 @@ class FEED_STATS {
 		return $content;
 	}
 	
-	function admin_head() {
+	static function admin_head() {
 		?>
 		<style type="text/css">
 			div.graph {
