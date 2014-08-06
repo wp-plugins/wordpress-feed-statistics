@@ -34,3 +34,4 @@ It will take a few days for the subscriber count to become accurate, so you may 
 = 4.0 =
 * Fixed bug allowing Feed Statistics to be used as an open redirect
 * Fixed bug that didn't track clickthroughs on links with uppercase anchor tags
+* Fixed bug causing some link clickthroughs to be attributed to the wrong URL

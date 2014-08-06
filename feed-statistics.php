@@ -67,7 +67,7 @@ class FEED_STATS {
 				
 				$link_id = $wpdb->get_var(
 					$wpdb->prepare(
-						"SELECT id FROM " . $wpdb->prefix . "feed_links WHERE url=%d",
+						"SELECT id FROM " . $wpdb->prefix . "feed_links WHERE url=%s",
 						$url
 					)
 				);
