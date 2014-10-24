@@ -4,7 +4,7 @@
 Plugin Name: Feed Statistics
 Plugin URI: http://www.chrisfinke.com/wordpress/plugins/feed-statistics/
 Description: Compiles statistics about who is reading your blog via a feed reader and what posts they're reading.
-Version: 4.0
+Version: 4.0.1
 Author: Christopher Finke
 Author URI: http://www.chrisfinke.com/
 License: GPL2
