@@ -211,50 +211,13 @@ class FEED_STATS {
 				);
 			}
 			else {
-				$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . $wpdb->prefix . "feed_subscribers WHERE identifier=%s AND feed=%s", $identifier, $feed ) );
-				
-				if ( empty( $row ) ) {
-					$wpdb->insert(
-						$wpdb->prefix . 'feed_subscribers',
-						array(
-							'subscribers' => $subscribers,
-							'identifier' => $identifier,
-							'user_agent' => $user_agent,
-							'feed' => $feed,
-							'date' => date( 'Y-m-d H:i:s' )
-						),
-						array(
-							'%d',
-							'%s',
-							'%s',
-							'%s',
-							'%s'
-						)
-					);
-				}
-				else if ( $user_agent != $row->user_agent || $subscribers != $row->subscribers ) {
-					$wpdb->update(
-						$wpdb->prefix . 'feed_subscribers',
-						array(
-							'date' => date( 'Y-m-d H:i:s' ),
-							'user_agent' => $user_agent,
-							'subscribers' => $subscribers
-						),
-						array(
-							'identifier' => $identifier,
-							'feed' => $feed
-						),
-						array(
-							'%s',
-							'%s',
-							'%d'
-						),
-						array(
-							'%s',
-							'%s'
-						)
-					);
-				}
+				$wpdb->query( $wpdb->prepare(
+					"INSERT INTO " . $wpdb->prefix . "feed_subscribers SET `subscribers`=%d, `identifier`=%s, `user_agent`=%s, `feed`=%s, `date`=NOW() ON DUPLICATE KEY UPDATE `date`=NOW(), `user_agent`=VALUES(`user_agent`), `subscribers`=VALUES(`subscribers`)",
+					$subscribers,
+					$identifier,
+					$user_agent,
+					$feed
+				) );
 			}
 		}
 	}
