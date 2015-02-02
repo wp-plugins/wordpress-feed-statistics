@@ -12,7 +12,7 @@ Domain Path: /languages/
 Text Domain: feed-statistics
 */
 
-define( 'FEED_STATISTICS_VERSION', '4.0' );
+define( 'FEED_STATISTICS_VERSION', '4.0.2b1' );
 
 class FEED_STATS {
 	const LINK_REGEX = "(<a[^>]+href=)(['\"])([^\#][^'\"]+)(['\"])([^>]*>)";
