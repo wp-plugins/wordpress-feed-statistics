@@ -1,0 +1,167 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Feed Statistics\n"
+"POT-Creation-Date: 2014-04-29 00:50-0600\n"
+"PO-Revision-Date: 2014-12-04 13:45+0100\n"
+"Last-Translator: Borisa Djuraskovic <borisad@webhostinghub.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.7\n"
+"X-Poedit-KeywordsList: __;_e;_x;_n;esc_html_e;esc_html__;esc_attr_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: ..\n"
+"X-Poedit-SearchPath-1: .\n"
+
+#: ../feed-statistics.php:524 ../feed-statistics.php:942
+msgid "Feed Statistics Settings"
+msgstr "Feed Statistics Postavke"
+
+#: ../feed-statistics.php:524 ../feed-statistics.php:985
+msgid "Feed Statistics"
+msgstr "Feed Statistics "
+
+#: ../feed-statistics.php:526
+msgid "Top Feeds"
+msgstr "Najčitaniji unosi"
+
+#: ../feed-statistics.php:527
+msgid "Feed Readers"
+msgstr "Čitači unosa"
+
+#: ../feed-statistics.php:530
+msgid "Post Views"
+msgstr "Pregledi posta"
+
+#: ../feed-statistics.php:533 ../feed-statistics.php:955
+msgid "Clickthroughs"
+msgstr "CTR"
+
+#: ../feed-statistics.php:544
+msgid "Most popular links in your feed (last 30 days)"
+msgstr "Najpopularniji linkovi u vašim unosima (u poslednjih 30 dana)"
+
+#: ../feed-statistics.php:549
+msgid "You currently have clickthrough tracking turned on."
+msgstr "Trenutno vam je CTR uključen. "
+
+#: ../feed-statistics.php:551
+msgid "You currently have clickthrough tracking turned off."
+msgstr "Trenutno vam je CTR isključen. "
+
+#: ../feed-statistics.php:560
+msgid "Outgoing Link"
+msgstr "Izlazni link"
+
+#: ../feed-statistics.php:561
+msgid "Clicks"
+msgstr "Broj klikova"
+
+#: ../feed-statistics.php:631
+msgid "Your most popular feeds"
+msgstr "Vaši najpopularniji unosi"
+
+#: ../feed-statistics.php:636
+msgid "Feed URL"
+msgstr "URL unosa"
+
+#: ../feed-statistics.php:637 ../feed-statistics.php:901
+#: ../feed-statistics.php:949
+msgid "Subscribers"
+msgstr "Pretplatnici"
+
+#: ../feed-statistics.php:709
+msgid "Your most popular posts (last 30 days)"
+msgstr "Vaši najpopularniji postovi (u poslednjih 30 dana)"
+
+#: ../feed-statistics.php:715
+#, php-format
+msgid ""
+"You have post view tracking turned on, but you have your feeds set to "
+"\"Summary\" mode. To track post views, you should select \"Full text\" mode "
+"on the <a href=\"%s\">Reading settings</a> page."
+msgstr ""
+"Uključeno vam je pračenje pregleda postova, ali unosi su vam podešeni na "
+"režim \"Pregled\". Da biste pratili preglede postova, odaberite režim \"Ceo "
+"tekst\" na stranici <a href=\"%s\">Postavke čitanja</a>."
+
+#: ../feed-statistics.php:718
+msgid "You have post view tracking turned on."
+msgstr "Uključeno vam je praćenje pregleda postova."
+
+#: ../feed-statistics.php:722
+msgid "You have post view tracking turned off."
+msgstr "Isključeno vam je praćenje pregleda postova."
+
+#: ../feed-statistics.php:731
+msgid "Post Title"
+msgstr "Naslov posta"
+
+#: ../feed-statistics.php:732
+msgid "Views"
+msgstr "Pregledi"
+
+#: ../feed-statistics.php:799
+msgid "Top Feed Readers"
+msgstr "Najzastupljeniji čitači unosa"
+
+#: ../feed-statistics.php:900
+msgid "Reader"
+msgstr "Čitač"
+
+#: ../feed-statistics.php:936
+msgid "Settings have been saved."
+msgstr "Postavke su sačuvane."
+
+#: ../feed-statistics.php:951
+#, php-format
+msgid ""
+"Count users who have requested a feed within the last %1$s days as "
+"subscribers. You currently have %2$s subscribers."
+msgstr ""
+"Prebroji korisnike koji su tražili unos u poslednjih %1$s dana, kao "
+"pretplatnici. Trenutno imate %2$s pretplatnika. "
+
+#: ../feed-statistics.php:958
+msgid "Track which links your subscribers click"
+msgstr "Pratite na koje linkove idu vaši pretplatnici."
+
+#: ../feed-statistics.php:960
+msgid ""
+"This requires Wordpress to route all links in your posts back through your "
+"site so that clicks can be recorded.  The user shouldn't notice a difference."
+msgstr ""
+"Ova opcija zahteva da Wordpress usmeri sve linkove u vašim postovima nazad "
+"na vaš site, tako da se zabeleži broj klikova. Korisnik ne bi trebalo da "
+"primeti razliku."
+
+#: ../feed-statistics.php:965
+msgid "Post views"
+msgstr "Pregledi posta"
+
+#: ../feed-statistics.php:968
+msgid "Track individual post views"
+msgstr "Prati pojedinačne preglede posta"
+
+#: ../feed-statistics.php:970
+msgid ""
+"This is done via an invisible tracking image and will track views of posts "
+"by users that use feed readers that load images from your site."
+msgstr ""
+"Ovo se radi preko nevidljive slike za praćenje. Pratiće preglede postova na "
+"osnovu korisnika koji koriste čitače unosa kako bi učitavali slike s vašeg "
+"site-a. "
+
+#: ../feed-statistics.php:977
+msgid "Update Options"
+msgstr "Ažuriraj opcije"
+
+#: ../feed-statistics.php:1043
+#, php-format
+msgid "%s feed subscriber"
+msgstr "%s pretplatnik unosa"
+
+#: ../feed-statistics.php:1072
+msgid "Settings"
+msgstr "Postavke"
